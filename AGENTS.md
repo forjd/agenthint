@@ -18,6 +18,13 @@ rtk sed -n '1,200p' src/index.ts
 
 ## Commands
 
+Use mise from the repo root for toolchain versions:
+
+```sh
+mise install
+mise exec -- npm run check
+```
+
 Use these project scripts:
 
 ```sh

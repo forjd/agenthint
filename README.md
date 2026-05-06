@@ -94,6 +94,7 @@ if (result.isAgent) {
 ## Development
 
 ```sh
+mise install
 npm install
 npm test
 npm run check

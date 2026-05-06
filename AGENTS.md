@@ -27,6 +27,8 @@ npm run format:check
 npm run lint
 npm run test
 npm run check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
 ```
 
 Run `npm run check` before committing or handing off code changes.
@@ -34,6 +36,7 @@ Run `npm run check` before committing or handing off code changes.
 ## Code Style
 
 - TypeScript source lives in `src/`.
+- Rust source lives in `crates/agenthint/src/`.
 - Tests live in `test/` and use Node's built-in test runner.
 - Keep detection results explainable: include `confidence` and `signals`.
 - Prefer explicit `AI_AGENT` support over heuristics.
@@ -61,4 +64,3 @@ docs: expand agent integration guide
 ```
 
 Husky runs `npm run check` before commits.
-

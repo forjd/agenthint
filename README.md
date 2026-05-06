@@ -88,14 +88,16 @@ if (result.isAgent) {
 
 - `agenthint` CLI
 - `agenthint` JavaScript/TypeScript package
-- `agenthint` Python package
 - `agenthint` Rust crate
+- `agenthint` Python package
 
 ## Development
 
 ```sh
 npm install
 npm test
+npm run check
+cargo test --workspace
 ```
 
 See [docs/agents.md](docs/agents.md) for recommended `AI_AGENT` values.

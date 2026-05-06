@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/forjd/agenthint/compare/v0.2.0...v0.3.0) (2026-05-06)
+
+
+### Features
+
+* add native binary installer ([c98678b](https://github.com/forjd/agenthint/commit/c98678b6c5e934f9d66d55fc256e7f9d17da4934))
+
+
+### Bug Fixes
+
+* add release binary checksums ([e74a1eb](https://github.com/forjd/agenthint/commit/e74a1eba4fe67494a56f843a277390c67c496e7e))
+
 ## [0.2.0](https://github.com/forjd/agenthint/compare/v0.1.0...v0.2.0) (2026-05-06)
 
 

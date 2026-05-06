@@ -22,11 +22,20 @@ Publishing uses npm trusted publishing from GitHub Actions, not a long-lived npm
 
 If the unscoped npm name becomes unavailable before first publish, switch `package.json` and release-please config to `@forjd/agenthint`.
 
-## Rust
+## crates.io
 
 The Rust crate is planned as `agenthint`.
 
-CI runs `cargo publish -p agenthint --dry-run`. Actual crates.io publishing is intentionally not automated yet because crates.io still requires a registry token. Add that once the crate metadata and ownership are final. The unscoped crate name currently appears available from `cargo search agenthint`.
+CI runs `cargo publish -p agenthint --dry-run`. Release publishing uses crates.io trusted publishing through `rust-lang/crates-io-auth-action@v1`, so no long-lived crates.io token is required in GitHub secrets.
+
+Trusted publisher settings:
+
+- crate: `agenthint`
+- provider: `GitHub Actions`
+- repository: `forjd/agenthint`
+- workflow filename: `release.yml`
+
+The release workflow skips `cargo publish` if the crate version is already present on crates.io.
 
 ## Native Binaries
 

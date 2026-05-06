@@ -57,3 +57,33 @@ jobs:
           fi
 
           npm publish
+
+      - name: Check crates.io published version
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        id: crate
+        run: |
+          set -euo pipefail
+          crate_name="$(cargo metadata --no-deps --format-version 1 | python -c "import json,sys; data=json.load(sys.stdin); print(next(pkg['name'] for pkg in data['packages'] if pkg['manifest_path'].endswith('/crates/agenthint/Cargo.toml')))")"
+          crate_version="$(cargo metadata --no-deps --format-version 1 | python -c "import json,sys; data=json.load(sys.stdin); print(next(pkg['version'] for pkg in data['packages'] if pkg['manifest_path'].endswith('/crates/agenthint/Cargo.toml')))")"
+          published_version="$(cargo search "$crate_name" --limit 1 | sed -n "s/^$crate_name = \"\\([^\"]*\\)\".*/\\1/p" || true)"
+
+          echo "name=$crate_name" >> "$GITHUB_OUTPUT"
+          echo "version=$crate_version" >> "$GITHUB_OUTPUT"
+
+          if [ "$published_version" = "$crate_version" ]; then
+            echo "$crate_name@$crate_version is already published; skipping cargo publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Request crates.io trusted publishing token
+        if: ${{ steps.release.outputs.releases_created == 'true' && steps.crate.outputs.publish == 'true' }}
+        id: cargo-auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish Rust crate with trusted publishing
+        if: ${{ steps.release.outputs.releases_created == 'true' && steps.crate.outputs.publish == 'true' }}
+        run: cargo publish -p agenthint --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.cargo-auth.outputs.token }}

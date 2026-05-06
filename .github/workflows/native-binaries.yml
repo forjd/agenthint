@@ -53,8 +53,38 @@ jobs:
         run: |
           mkdir -p dist
           cp "target/release/${{ matrix.binary }}" "dist/${{ matrix.asset }}"
+          cd dist
+          shasum -a 256 "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"
 
       - name: Upload asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
+
+      - name: Upload checksum artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksum-${{ matrix.name }}
+          path: dist/${{ matrix.asset }}.sha256
+
+  checksums:
+    name: Publish SHA256SUMS
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download checksum artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: checksum-*
+          merge-multiple: true
+          path: checksums
+
+      - name: Build SHA256SUMS
+        run: |
+          sort checksums/*.sha256 > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload SHA256SUMS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" SHA256SUMS --clobber

@@ -39,7 +39,9 @@ The release workflow skips `cargo publish` if the crate version is already prese
 
 ## Native Binaries
 
-Native binary releases are produced from the Rust CLI when a GitHub Release is published. The initial target matrix is:
+Native binary releases are produced from the Rust CLI when a GitHub Release is published. Each release also includes per-binary `.sha256` files and a combined `SHA256SUMS` file.
+
+The initial target matrix is:
 
 - Linux x64
 - macOS arm64

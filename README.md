@@ -28,7 +28,9 @@ AI agents benefit from different CLI defaults than humans:
 ## Quick Start
 
 ```sh
-npm install agenthint
+npm install -g agenthint
+# or
+cargo install agenthint
 ```
 
 ```sh
@@ -36,6 +38,16 @@ if agenthint; then
   my-tool --json --no-progress
 else
   my-tool
+fi
+```
+
+Use it inside another CLI or script to choose agent-friendly output:
+
+```sh
+if agenthint >/dev/null; then
+  exec my-cli --json --no-progress --no-pager "$@"
+else
+  exec my-cli "$@"
 fi
 ```
 
@@ -67,6 +79,24 @@ Example JSON output:
   "signals": ["env:CODEX_CI", "env:CODEX_THREAD_ID"]
 }
 ```
+
+## Install
+
+Install from npm:
+
+```sh
+npm install -g agenthint
+agenthint --json
+```
+
+Install from crates.io:
+
+```sh
+cargo install agenthint
+agenthint --json
+```
+
+Native binaries are built by GitHub Actions for release assets. The first release with binary assets will be the next release after `v0.2.0`.
 
 ## TypeScript API
 

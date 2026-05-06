@@ -501,6 +501,55 @@ mod tests {
     }
 
     #[test]
+    fn matches_shared_cli_fixtures() {
+        let fixture_path = format!(
+            "{}/../../fixtures/cli-cases.json",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        let fixtures: Value =
+            serde_json::from_str(&std::fs::read_to_string(fixture_path).unwrap()).unwrap();
+        let fixtures = fixtures.as_array().unwrap();
+
+        for fixture in fixtures {
+            let name = fixture["name"].as_str().unwrap();
+            let args = fixture["args"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|arg| arg.as_str().unwrap())
+                .collect::<Vec<_>>();
+            let fixture_env = fixture["env"]
+                .as_object()
+                .unwrap()
+                .iter()
+                .map(|(key, value)| (key.to_string(), value.as_str().unwrap().to_string()))
+                .collect::<HashMap<_, _>>();
+            let result = detect(fixture_env);
+            let output = if args.contains(&"--json") {
+                format!("{}\n", to_json(&result))
+            } else if args.contains(&"--explain") {
+                format!("{}\n", format_explanation(&result))
+            } else if args.contains(&"doctor") {
+                format!("{}\n", format_doctor(&result))
+            } else if let Some(init_index) = args.iter().position(|arg| *arg == "init") {
+                format!("{}\n", format_init(args.get(init_index + 1).copied()))
+            } else {
+                String::new()
+            };
+
+            if let Some(expected) = fixture["stdout"].as_str() {
+                assert_eq!(output, expected, "{name}");
+            }
+
+            if let Some(expected_values) = fixture["stdoutContains"].as_array() {
+                for expected in expected_values {
+                    assert!(output.contains(expected.as_str().unwrap()), "{name}");
+                }
+            }
+        }
+    }
+
+    #[test]
     fn prioritizes_ai_agent() {
         let result = detect(env(&[("AI_AGENT", "custom-agent"), ("CURSOR_AGENT", "1")]));
 

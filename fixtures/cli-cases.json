@@ -1,0 +1,43 @@
+[
+  {
+    "name": "json no agent",
+    "args": ["--json"],
+    "env": {},
+    "status": 1,
+    "stdout": "{\n  \"isAgent\": false,\n  \"agent\": null,\n  \"confidence\": 0,\n  \"signals\": []\n}\n"
+  },
+  {
+    "name": "explain forced codex",
+    "args": ["--explain"],
+    "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "codex" },
+    "status": 0,
+    "stdout": "agent runtime likely detected\nagent: codex\nconfidence: 1.00\nsignals: env:AGENTHINT_FORCE\n"
+  },
+  {
+    "name": "doctor heuristic codex",
+    "args": ["doctor"],
+    "env": { "CODEX_SANDBOX": "1" },
+    "status": 0,
+    "stdoutContains": [
+      "agenthint doctor",
+      "status: agent runtime likely detected",
+      "agent: codex",
+      "setup: detection is heuristic",
+      "AI_AGENT=codex"
+    ]
+  },
+  {
+    "name": "init codex",
+    "args": ["init", "codex"],
+    "env": {},
+    "status": 0,
+    "stdout": "AI_AGENT=codex\n\nUse this value in the environment used for agent tool calls.\n"
+  },
+  {
+    "name": "init roo alias",
+    "args": ["init", "roo"],
+    "env": {},
+    "status": 0,
+    "stdout": "AI_AGENT=roo-code\n\nUse this value in the environment used for agent tool calls.\n"
+  }
+]

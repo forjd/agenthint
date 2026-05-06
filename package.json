@@ -1,0 +1,46 @@
+{
+  "name": "agenthint",
+  "version": "0.1.0",
+  "description": "Detect AI agent runtimes and adapt CLI output.",
+  "type": "module",
+  "bin": {
+    "agenthint": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "SPEC.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "npm run format:check && npm run lint && npm run test",
+    "prepare": "husky",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "cli",
+    "detection",
+    "runtime"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.14",
+    "@types/node": "^25.0.0",
+    "husky": "^9.1.7",
+    "typescript": "^5.9.3"
+  }
+}

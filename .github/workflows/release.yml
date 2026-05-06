@@ -27,11 +27,11 @@ jobs:
 
       - name: Checkout
         if: ${{ steps.release.outputs.releases_created == 'true' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install toolchains
         if: ${{ steps.release.outputs.releases_created == 'true' }}
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@v4
         with:
           cache: true
 

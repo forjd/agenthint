@@ -30,18 +30,22 @@ jobs:
             os: ubuntu-latest
             binary: agenthint
             asset: agenthint-linux-x64
+            target: ""
           - name: macos-arm64
             os: macos-latest
             binary: agenthint
             asset: agenthint-macos-arm64
+            target: ""
           - name: macos-x64
-            os: macos-13
+            os: macos-latest
             binary: agenthint
             asset: agenthint-macos-x64
+            target: x86_64-apple-darwin
           - name: windows-x64
             os: windows-latest
             binary: agenthint.exe
             asset: agenthint-windows-x64.exe
+            target: ""
 
     steps:
       - name: Checkout
@@ -53,13 +57,24 @@ jobs:
           cache: true
 
       - name: Build Rust CLI
-        run: cargo build --release -p agenthint
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.target }}" ]; then
+            rustup target add "${{ matrix.target }}"
+            cargo build --release -p agenthint --target "${{ matrix.target }}"
+          else
+            cargo build --release -p agenthint
+          fi
 
       - name: Prepare asset
         shell: bash
         run: |
           mkdir -p dist
-          cp "target/release/${{ matrix.binary }}" "dist/${{ matrix.asset }}"
+          if [ -n "${{ matrix.target }}" ]; then
+            cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" "dist/${{ matrix.asset }}"
+          else
+            cp "target/release/${{ matrix.binary }}" "dist/${{ matrix.asset }}"
+          fi
           cd dist
           if command -v shasum >/dev/null 2>&1; then
             shasum -a 256 "${{ matrix.asset }}" > "${{ matrix.asset }}.sha256"

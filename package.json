@@ -3,6 +3,17 @@
   "version": "0.1.0",
   "description": "Detect AI agent runtimes and adapt CLI output.",
   "type": "module",
+  "homepage": "https://github.com/forjd/agenthint#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forjd/agenthint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/forjd/agenthint/issues"
+  },
+  "engines": {
+    "node": ">=22.14.0"
+  },
   "bin": {
     "agenthint": "./dist/cli.js"
   },

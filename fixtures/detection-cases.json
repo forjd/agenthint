@@ -1,0 +1,82 @@
+[
+  {
+    "name": "explicit custom agent",
+    "env": { "AI_AGENT": "custom-agent", "CURSOR_AGENT": "1" },
+    "isAgent": true,
+    "agent": "custom-agent",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "empty AI_AGENT is ignored",
+    "env": { "AI_AGENT": "  " },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 0,
+    "signals": []
+  },
+  {
+    "name": "copilot alias",
+    "env": { "AI_AGENT": "github-copilot-cli" },
+    "isAgent": true,
+    "agent": "copilot",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "claude alias",
+    "env": { "AI_AGENT": "claude-code/2.1.123/agent" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "codex env",
+    "env": { "CODEX_HOME": "/tmp/codex" },
+    "isAgent": true,
+    "agent": "codex",
+    "confidence": 0.92,
+    "signals": ["env:CODEX_HOME"]
+  },
+  {
+    "name": "claude code env",
+    "env": { "CLAUDECODE": "1" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.9,
+    "signals": ["env:CLAUDECODE"]
+  },
+  {
+    "name": "cowork env",
+    "env": { "CLAUDE_CODE": "1", "CLAUDE_CODE_IS_COWORK": "1" },
+    "isAgent": true,
+    "agent": "cowork",
+    "confidence": 0.9,
+    "signals": ["env:CLAUDE_CODE"]
+  },
+  {
+    "name": "aider prefix",
+    "env": { "AIDER_MODEL": "sonnet" },
+    "isAgent": true,
+    "agent": "aider",
+    "confidence": 0.86,
+    "signals": ["env:AIDER_MODEL"]
+  },
+  {
+    "name": "forced agent",
+    "env": { "AGENTHINT_FORCE": "true", "AGENTHINT_AGENT": "cursor" },
+    "isAgent": true,
+    "agent": "cursor",
+    "confidence": 1,
+    "signals": ["env:AGENTHINT_FORCE"]
+  },
+  {
+    "name": "disabled agent",
+    "env": { "AGENTHINT_DISABLE": "1", "CODEX_HOME": "/tmp/codex" },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 1,
+    "signals": ["env:AGENTHINT_DISABLE"]
+  }
+]

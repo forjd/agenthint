@@ -58,6 +58,8 @@ The CLI should preserve these exit codes:
 - `1`: agent runtime not detected
 - `2`: invalid usage or detection error
 
+Setup-only commands such as `agenthint init <agent>` should exit `0`.
+
 `agenthint doctor` should explain what was detected and recommend setting `AI_AGENT` when detection is heuristic.
 
 ## Git

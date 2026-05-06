@@ -156,6 +156,28 @@ pub fn format_doctor(result: &AgentHintResult) -> String {
     )
 }
 
+pub fn format_init(agent: Option<&str>) -> String {
+    let Some(agent) = normalize_agent_name(agent.map(|value| value.to_string()).as_ref()) else {
+        return [
+            "agenthint init",
+            "",
+            "Usage:",
+            "  agenthint init <agent-name>",
+            "",
+            "Example:",
+            "  agenthint init codex",
+        ]
+        .join("\n");
+    };
+
+    [
+        format!("AI_AGENT={agent}"),
+        String::new(),
+        "Use this value in the environment used for agent tool calls.".to_string(),
+    ]
+    .join("\n")
+}
+
 pub fn to_json(result: &AgentHintResult) -> String {
     let agent = result
         .agent
@@ -419,6 +441,7 @@ fn format_confidence(confidence: f32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
 
     fn env(entries: &[(&str, &str)]) -> HashMap<String, String> {
         entries
@@ -433,6 +456,48 @@ mod tests {
             check_filesystem: false,
             ..DetectAgentOptions::default()
         })
+    }
+
+    #[test]
+    fn matches_shared_detection_fixtures() {
+        let fixture_path = format!(
+            "{}/../../fixtures/detection-cases.json",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        let fixtures: Value =
+            serde_json::from_str(&std::fs::read_to_string(fixture_path).unwrap()).unwrap();
+        let fixtures = fixtures.as_array().unwrap();
+
+        for fixture in fixtures {
+            let name = fixture["name"].as_str().unwrap();
+            let fixture_env = fixture["env"]
+                .as_object()
+                .unwrap()
+                .iter()
+                .map(|(key, value)| (key.to_string(), value.as_str().unwrap().to_string()))
+                .collect::<HashMap<_, _>>();
+            let result = detect(fixture_env);
+            let expected_agent = fixture["agent"].as_str();
+            let expected_signals = fixture["signals"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|signal| signal.as_str().unwrap().to_string())
+                .collect::<Vec<_>>();
+
+            assert_eq!(
+                result.is_agent,
+                fixture["isAgent"].as_bool().unwrap(),
+                "{name}"
+            );
+            assert_eq!(result.agent.as_deref(), expected_agent, "{name}");
+            assert_eq!(
+                result.confidence,
+                fixture["confidence"].as_f64().unwrap() as f32,
+                "{name}"
+            );
+            assert_eq!(result.signals, expected_signals, "{name}");
+        }
     }
 
     #[test]
@@ -553,5 +618,12 @@ mod tests {
         assert!(json.contains("\"agent\": \"copilot\""));
         assert!(json.contains("env:COPILOT_GITHUB_TOKEN"));
         assert!(!json.contains("secret"));
+    }
+
+    #[test]
+    fn formats_init_advice() {
+        assert!(format_init(Some("codex")).contains("AI_AGENT=codex"));
+        assert!(format_init(Some("roo")).contains("AI_AGENT=roo-code"));
+        assert!(format_init(None).contains("agenthint init <agent-name>"));
     }
 }

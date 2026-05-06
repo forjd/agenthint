@@ -91,6 +91,8 @@ The `agenthint` CLI should use:
 - `1`: agent runtime not detected
 - `2`: invalid usage or detection error
 
+Subcommands that only print setup information, such as `agenthint init <agent>`, should exit `0` when invoked successfully.
+
 ## Security
 
 Agent detection must not be used as an authorization, sandboxing, policy, or trust boundary. Treat all results as hints for user experience only.

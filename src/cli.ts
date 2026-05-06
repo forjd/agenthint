@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import { formatDoctor } from "./doctor.js";
+import { formatInit } from "./init.js";
 import { detectAgent } from "./index.js";
 
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 
 if (args.has("-h") || args.has("--help")) {
   printHelp();
@@ -11,7 +13,10 @@ if (args.has("-h") || args.has("--help")) {
 
 const result = detectAgent();
 
-if (args.has("doctor")) {
+if (args.has("init")) {
+  console.log(formatInit(rawArgs[rawArgs.indexOf("init") + 1]));
+  process.exit(0);
+} else if (args.has("doctor")) {
   console.log(formatDoctor(result));
 } else if (args.has("--json")) {
   console.log(JSON.stringify(result, null, 2));
@@ -28,6 +33,7 @@ Detect whether the current process is probably running under an AI agent.
 
 Usage:
   agenthint             Exit 0 if an agent is likely detected, otherwise 1
+  agenthint init <name> Print the recommended AI_AGENT value
   agenthint doctor      Print detection details and setup advice
   agenthint --json      Print the structured detection result
   agenthint --explain   Print a short human-readable explanation

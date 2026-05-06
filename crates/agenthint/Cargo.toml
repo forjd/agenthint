@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2024"
 description = "Detect AI agent runtimes and adapt CLI output."
 license = "MIT"
+repository = "https://github.com/forjd/agenthint"
+homepage = "https://github.com/forjd/agenthint"
+readme = "../../README.md"
+keywords = ["ai", "agent", "cli", "detection"]
+categories = ["command-line-utilities", "development-tools"]
 
 [lib]
 name = "agenthint"
@@ -13,3 +18,5 @@ path = "src/lib.rs"
 name = "agenthint"
 path = "src/main.rs"
 
+[dev-dependencies]
+serde_json = "1"

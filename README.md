@@ -47,6 +47,7 @@ agenthint             # exit 0 if an agent is likely detected, otherwise 1
 agenthint --json      # print the structured detection result
 agenthint --explain   # print a short explanation
 agenthint doctor      # print detection details and setup advice
+agenthint init codex  # print the recommended AI_AGENT value
 ```
 
 Example JSON output:
@@ -161,6 +162,16 @@ Planned:
 
 - standalone native binary releases
 - Python package
+
+The unscoped `agenthint` name currently appears available on npm and crates.io. If the npm name becomes unavailable before first publish, the fallback package name is `@forjd/agenthint`.
+
+## CI and Releases
+
+GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, npm package checks, and `cargo publish --dry-run`.
+
+Releases use release-please with Conventional Commits. npm publishing is configured for trusted publishing via GitHub Actions OIDC, so no long-lived npm token is required. Before the first npm publish, configure the trusted publisher in npm package settings for `forjd/agenthint` and `.github/workflows/release.yml`.
+
+See [docs/releases.md](docs/releases.md) for release details.
 
 ## Development
 

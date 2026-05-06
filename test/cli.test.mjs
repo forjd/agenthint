@@ -43,4 +43,14 @@ describe("agenthint CLI", () => {
     assert.match(result.stdout, /Prefer setting AI_AGENT/);
     assert.match(result.stdout, /AI_AGENT=codex/);
   });
+
+  it("prints init advice", () => {
+    const result = spawnSync(process.execPath, [CLI_PATH, "init", "codex"], {
+      env: {},
+      encoding: "utf8",
+    });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /AI_AGENT=codex/);
+  });
 });

@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { detectAgent } from "../dist/index.js";
 
+const fixtureCases = JSON.parse(readFileSync("fixtures/detection-cases.json", "utf8"));
+
 describe("detectAgent", () => {
+  it("matches shared detection fixtures", () => {
+    for (const fixture of fixtureCases) {
+      const result = detectAgent({ env: fixture.env, checkFilesystem: false });
+
+      assert.equal(result.isAgent, fixture.isAgent, fixture.name);
+      assert.equal(result.agent, fixture.agent, fixture.name);
+      assert.equal(result.confidence, fixture.confidence, fixture.name);
+      assert.deepEqual(result.signals, fixture.signals, fixture.name);
+    }
+  });
+
   it("prioritizes AI_AGENT over known environment signals", () => {
     const result = detectAgent({ env: { AI_AGENT: "custom-agent", CURSOR_AGENT: "1" } });
 

@@ -86,12 +86,14 @@ jobs:
             echo "No SHA256 tool found" >&2
             exit 1
           fi
+          sed -i.bak 's/ \*/  /' "${{ matrix.asset }}.sha256"
+          rm -f "${{ matrix.asset }}.sha256.bak"
 
       - name: Upload asset
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$RELEASE_TAG" dist/* --clobber
+        run: gh release upload "$RELEASE_TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Upload checksum artifact
         uses: actions/upload-artifact@v4
@@ -122,4 +124,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
+        run: gh release upload "$RELEASE_TAG" SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber

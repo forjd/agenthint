@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   check:
     name: Check
@@ -33,4 +36,3 @@ jobs:
 
       - name: Check Rust crate package
         run: cargo publish -p agenthint --dry-run
-

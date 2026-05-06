@@ -1,5 +1,12 @@
 # agenthint
 
+[![CI](https://github.com/forjd/agenthint/actions/workflows/ci.yml/badge.svg)](https://github.com/forjd/agenthint/actions/workflows/ci.yml)
+[![Release](https://github.com/forjd/agenthint/actions/workflows/release.yml/badge.svg)](https://github.com/forjd/agenthint/actions/workflows/release.yml)
+[![npm](https://img.shields.io/npm/v/agenthint?logo=npm&color=cb3837)](https://www.npmjs.com/package/agenthint)
+[![crates.io](https://img.shields.io/crates/v/agenthint?logo=rust&color=dea584)](https://crates.io/crates/agenthint)
+[![License](https://img.shields.io/github/license/forjd/agenthint)](LICENSE)
+[![GitHub Repo stars](https://img.shields.io/github/stars/forjd/agenthint?style=social)](https://github.com/forjd/agenthint)
+
 Detect AI agent runtimes and adapt CLI output.
 
 `agenthint` is a small runtime detection spec, CLI, and library for developer tools that want to know when they are probably being run by an AI agent such as Codex, Claude Code, Cursor, Gemini CLI, or Aider.

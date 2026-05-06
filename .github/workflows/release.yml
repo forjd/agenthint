@@ -1,6 +1,10 @@
 name: Release
 
 on:
+  workflow_dispatch:
+  release:
+    types:
+      - published
   push:
     branches:
       - main
@@ -19,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run release-please
+        if: ${{ github.event_name == 'push' }}
         id: release
         uses: googleapis/release-please-action@v4
         with:
@@ -26,25 +31,25 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Checkout
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
         uses: actions/checkout@v6
 
       - name: Install toolchains
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
         uses: jdx/mise-action@v4
         with:
           cache: true
 
       - name: Install npm dependencies
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
         run: npm ci
 
       - name: Run checks
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
         run: npm run check
 
       - name: Publish npm package with trusted publishing
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
         run: |
           set -euo pipefail
           package_name="$(node -p "require('./package.json').name")"
@@ -59,7 +64,7 @@ jobs:
           npm publish
 
       - name: Check crates.io published version
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
         id: crate
         run: |
           set -euo pipefail
@@ -78,12 +83,12 @@ jobs:
           fi
 
       - name: Request crates.io trusted publishing token
-        if: ${{ steps.release.outputs.releases_created == 'true' && steps.crate.outputs.publish == 'true' }}
+        if: ${{ (github.event_name != 'push' || steps.release.outputs.releases_created == 'true') && steps.crate.outputs.publish == 'true' }}
         id: cargo-auth
         uses: rust-lang/crates-io-auth-action@v1
 
       - name: Publish Rust crate with trusted publishing
-        if: ${{ steps.release.outputs.releases_created == 'true' && steps.crate.outputs.publish == 'true' }}
+        if: ${{ (github.event_name != 'push' || steps.release.outputs.releases_created == 'true') && steps.crate.outputs.publish == 'true' }}
         run: cargo publish -p agenthint --locked
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.cargo-auth.outputs.token }}

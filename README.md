@@ -2,49 +2,27 @@
 
 Detect AI agent runtimes and adapt CLI output.
 
-`agenthint` is a small runtime detection spec and toolchain for CLIs and developer tools that want to know when they are probably being run by an AI agent such as Codex, Claude Code, Cursor agents, or Aider.
+`agenthint` is a small runtime detection spec, CLI, and library for developer tools that want to know when they are probably being run by an AI agent such as Codex, Claude Code, Cursor, Gemini CLI, or Aider.
 
-It is intended for output and interaction ergonomics, not security.
+It is built for ergonomics, not security. Use it to choose better output defaults for agents; do not use it as a trust boundary.
 
 ## Why
 
-Agent-driven CLI sessions benefit from different defaults than human terminal sessions:
+AI agents benefit from different CLI defaults than humans:
 
 - structured output instead of decorative output
 - no spinners, pagers, prompts, or browser launches
-- stable section markers and exit-code explanations
+- stable section markers and clear exit-code meanings
 - absolute paths and line-oriented diagnostics
 - concise logs that preserve useful debugging context
 
-`agenthint` gives tools a shared way to make that decision.
+`agenthint` gives CLIs and libraries a shared way to make that decision.
 
-## Shape
-
-The core API should return a runtime result with confidence and signals:
-
-```json
-{
-  "isAgent": true,
-  "agent": "codex",
-  "confidence": 0.92,
-  "signals": ["env:CODEX_HOME", "parent:codex"]
-}
-```
-
-Agents can opt in explicitly with `AI_AGENT`:
+## Quick Start
 
 ```sh
-AI_AGENT=codex my-tool
-AI_AGENT=my-custom-agent my-tool
+npm install agenthint
 ```
-
-The first implementation target is a TypeScript CLI/library package:
-
-```sh
-agenthint
-```
-
-Example use:
 
 ```sh
 if agenthint; then
@@ -54,16 +32,35 @@ else
 fi
 ```
 
-CLI commands:
+For agents and wrappers, the preferred explicit convention is `AI_AGENT`:
+
+```sh
+AI_AGENT=codex my-tool
+AI_AGENT=claude-code my-tool
+AI_AGENT=my-custom-agent my-tool
+```
+
+## CLI
 
 ```sh
 agenthint             # exit 0 if an agent is likely detected, otherwise 1
-agenthint doctor      # print detection details and setup advice
 agenthint --json      # print the structured detection result
 agenthint --explain   # print a short explanation
+agenthint doctor      # print detection details and setup advice
 ```
 
-Library API:
+Example JSON output:
+
+```json
+{
+  "isAgent": true,
+  "agent": "codex",
+  "confidence": 0.92,
+  "signals": ["env:CODEX_CI", "env:CODEX_THREAD_ID"]
+}
+```
+
+## TypeScript API
 
 ```ts
 import { detectAgent } from "agenthint";
@@ -75,30 +72,125 @@ if (result.isAgent) {
 }
 ```
 
+## Rust API
+
+The repository also contains a Rust implementation under `crates/agenthint`.
+
+```rust
+use agenthint::detect_agent;
+
+let result = detect_agent();
+
+if result.is_agent {
+    // Prefer structured, quiet, non-interactive output.
+}
+```
+
+Run the Rust CLI locally:
+
+```sh
+cargo run -q -p agenthint -- --json
+```
+
+## Detection Model
+
+The result includes:
+
+- `isAgent`: whether an agent runtime is likely detected
+- `agent`: known or custom agent name
+- `confidence`: a number from `0` to `1`
+- `signals`: diagnostic signal names, never secret values
+
+Detection priority:
+
+1. `AGENTHINT_DISABLE`
+2. `AGENTHINT_FORCE`
+3. explicit `AI_AGENT`
+4. known environment signals
+5. documented filesystem signals
+6. low-confidence stdio hints
+
+## Supported Agents
+
+Current known agent names include:
+
+- Codex
+- Claude Code
+- Cowork
+- Cursor
+- Gemini CLI
+- Aider
+- Augment CLI
+- AMP
+- OpenCode
+- OpenClaw
+- GitHub Copilot
+- Replit
+- Devin
+- Google Antigravity
+- Pi
+- Kiro CLI
+- Windsurf
+- Cline
+- Roo Code
+- Kilo Code
+- v0
+
+Custom agents are supported through any non-empty `AI_AGENT` value.
+
+See [docs/agents.md](docs/agents.md) for recommended `AI_AGENT` values.
+
 ## Principles
 
 - Detection is advisory and can be spoofed.
 - Prefer `AI_AGENT` when an agent can set an explicit hint.
-- Prefer explicit environment signals when available.
+- Prefer explicit environment signals over brittle heuristics.
 - Return confidence, not false certainty.
+- Print signal names, not environment variable values.
 - Keep output quiet and machine-readable when requested.
-- Make the result useful across languages and toolchains.
+- Make the convention useful across languages and toolchains.
 
-## Planned Packages
+## Packages
 
-- `agenthint` CLI
+Current:
+
 - `agenthint` JavaScript/TypeScript package
-- `agenthint` Rust crate
-- `agenthint` Python package
+- `agenthint` Rust crate and CLI implementation
+
+Planned:
+
+- standalone native binary releases
+- Python package
 
 ## Development
 
+Use [mise](https://mise.jdx.dev/) for local toolchain versions:
+
 ```sh
 mise install
-npm install
-npm test
-npm run check
-cargo test --workspace
 ```
 
-See [docs/agents.md](docs/agents.md) for recommended `AI_AGENT` values.
+Install dependencies and run checks:
+
+```sh
+npm install
+npm run check
+```
+
+Useful commands:
+
+```sh
+npm run format
+npm run lint
+npm test
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+## Security
+
+`agenthint` is not an authentication, authorization, sandboxing, or policy tool. Environment variables, parent process names, and filesystem markers can be spoofed. Treat all results as UX hints only.
+
+## License
+
+MIT © Forjd

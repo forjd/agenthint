@@ -40,6 +40,8 @@ cargo test --workspace
 
 Run `npm run check` before committing or handing off code changes.
 
+If editing `install.sh`, run `sh -n install.sh` and keep it POSIX `sh` compatible.
+
 ## Code Style
 
 - TypeScript source lives in `src/`.

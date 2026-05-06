@@ -49,3 +49,5 @@ The initial target matrix is:
 - Windows x64
 
 Linux arm64 can be added once the runner target is confirmed for the repository.
+
+The root `install.sh` script downloads the latest matching binary and verifies it against `SHA256SUMS` when available.

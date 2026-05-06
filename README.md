@@ -96,7 +96,20 @@ cargo install agenthint
 agenthint --json
 ```
 
-Native binaries are built by GitHub Actions for release assets. The first release with binary assets will be the next release after `v0.2.0`.
+Install the latest native binary from GitHub Releases:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/forjd/agenthint/main/install.sh | sh
+```
+
+Override the install directory or version:
+
+```sh
+AGENTHINT_INSTALL_DIR=/usr/local/bin sh install.sh
+AGENTHINT_VERSION=agenthint-vX.Y.Z sh install.sh
+```
+
+Native binaries are built by GitHub Actions for release assets. The installer verifies `SHA256SUMS` when the selected release provides it.
 
 ## TypeScript API
 

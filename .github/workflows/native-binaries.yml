@@ -73,6 +73,7 @@ jobs:
           fi
 
       - name: Upload asset
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$RELEASE_TAG" dist/* --clobber
@@ -97,11 +98,13 @@ jobs:
           path: checksums
 
       - name: Build SHA256SUMS
+        shell: bash
         run: |
           sort checksums/*.sha256 > SHA256SUMS
           cat SHA256SUMS
 
       - name: Upload SHA256SUMS
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$RELEASE_TAG" SHA256SUMS --clobber

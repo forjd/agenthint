@@ -1,3 +1,5 @@
+![agenthint banner](banner.png)
+
 # agenthint
 
 [![CI](https://github.com/forjd/agenthint/actions/workflows/ci.yml/badge.svg)](https://github.com/forjd/agenthint/actions/workflows/ci.yml)

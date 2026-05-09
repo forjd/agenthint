@@ -5,6 +5,7 @@ repo="forjd/agenthint"
 bin_name="agenthint"
 install_dir="${AGENTHINT_INSTALL_DIR:-${BIN_DIR:-$HOME/.local/bin}}"
 version="${AGENTHINT_VERSION:-latest}"
+allow_missing_checksum="${AGENTHINT_ALLOW_MISSING_CHECKSUM:-}"
 
 need() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -71,9 +72,31 @@ sha256_file() {
   fi
 }
 
+is_truthy() {
+  case "$1" in
+    1 | true | TRUE | yes | YES | on | ON) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+resolve_latest_native_tag() {
+  releases_path="$tmp_dir/releases.json"
+
+  download "https://api.github.com/repos/$repo/releases" "$releases_path"
+  tag="$(awk -F '"' '/"tag_name": "agenthint-v/ { print $4; exit }' "$releases_path")"
+
+  if [ -z "$tag" ]; then
+    echo "agenthint install: no agenthint-v* release found" >&2
+    exit 1
+  fi
+
+  echo "$tag"
+}
+
 resolve_release_base() {
   if [ "$version" = "latest" ]; then
-    echo "https://github.com/$repo/releases/latest/download"
+    tag="$(resolve_latest_native_tag)"
+    echo "https://github.com/$repo/releases/download/$tag"
   else
     echo "https://github.com/$repo/releases/download/$version"
   fi
@@ -85,9 +108,9 @@ need chmod
 need mkdir
 
 asset="$(detect_asset)"
-release_base="$(resolve_release_base)"
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT INT TERM
+release_base="$(resolve_release_base)"
 
 binary_path="$tmp_dir/$asset"
 checksums_path="$tmp_dir/SHA256SUMS"
@@ -108,7 +131,13 @@ if download "$release_base/SHA256SUMS" "$checksums_path"; then
     exit 1
   fi
 else
-  echo "agenthint install: SHA256SUMS not available; installing without checksum verification" >&2
+  if is_truthy "$allow_missing_checksum"; then
+    echo "agenthint install: SHA256SUMS not available; installing without checksum verification" >&2
+  else
+    echo "agenthint install: SHA256SUMS not available; refusing to install without verification" >&2
+    echo "Set AGENTHINT_ALLOW_MISSING_CHECKSUM=1 to bypass checksum verification." >&2
+    exit 1
+  fi
 fi
 
 mkdir -p "$install_dir"
@@ -119,4 +148,3 @@ echo "Installed agenthint to $install_dir/$bin_name"
 if ! command -v "$bin_name" >/dev/null 2>&1; then
   echo "Add $install_dir to PATH to run agenthint directly." >&2
 fi
-

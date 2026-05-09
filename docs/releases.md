@@ -63,4 +63,4 @@ The initial target matrix is:
 
 Linux arm64 can be added once the runner target is confirmed for the repository.
 
-The root `install.sh` script downloads the latest matching binary and verifies it against `SHA256SUMS` when available.
+The root `install.sh` script downloads the latest `agenthint-v*` binary and verifies it against `SHA256SUMS`. Missing checksums fail closed unless `AGENTHINT_ALLOW_MISSING_CHECKSUM=1` is set explicitly.

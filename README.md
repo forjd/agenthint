@@ -158,13 +158,14 @@ agenthint --json
 curl -fsSL https://raw.githubusercontent.com/forjd/agenthint/main/install.sh | sh
 ```
 
-The install script downloads the latest `agenthint-v*` GitHub Release asset for your platform and verifies `SHA256SUMS` when the selected release provides them.
+The install script downloads the latest `agenthint-v*` GitHub Release asset for your platform and verifies it against `SHA256SUMS`.
 
 Override the install directory or version:
 
 ```sh
 AGENTHINT_INSTALL_DIR=/usr/local/bin sh install.sh
 AGENTHINT_VERSION=agenthint-vX.Y.Z sh install.sh
+AGENTHINT_ALLOW_MISSING_CHECKSUM=1 sh install.sh
 ```
 
 ## Detection Model

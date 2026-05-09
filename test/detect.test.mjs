@@ -106,10 +106,12 @@ describe("detectAgent", () => {
     const roo = detectAgent({ env: { AI_AGENT: "roo" } });
     const kilo = detectAgent({ env: { AI_AGENT: "kilo-code" } });
     const vibe = detectAgent({ env: { AI_AGENT: "vibe" } });
+    const v0 = detectAgent({ env: { AI_AGENT: "v0" } });
 
     assert.equal(roo.agent, "roo-code");
     assert.equal(kilo.agent, "kilocode");
     assert.equal(vibe.agent, "mistral-vibe");
+    assert.equal(v0.agent, "v0");
   });
 
   it("detects Devin from the filesystem marker", () => {

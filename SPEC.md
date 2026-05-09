@@ -77,6 +77,12 @@ Initial candidates:
 
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
 
+Known agent names without stable heuristic signals should still be supported through `AI_AGENT`.
+Current explicit-only known names:
+
+- `mistral-vibe`
+- `v0`
+
 ## Known Filesystem Signals
 
 - `/opt/.devin`

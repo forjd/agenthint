@@ -19,6 +19,7 @@
 | OpenCode | `opencode` |
 | OpenClaw | `openclaw` |
 | Google Antigravity | `antigravity` |
+| Mistral Vibe | `mistral-vibe` |
 | v0 | `v0` |
 
 Custom agents can use any non-empty value:
@@ -30,6 +31,13 @@ AI_AGENT=my-custom-agent my-tool
 ## Why Explicit Beats Heuristic
 
 Environment and filesystem heuristics are useful for compatibility, but they can be missing, stale, or ambiguous. `AI_AGENT` is stable, readable, and portable across languages.
+
+## Heuristic Coverage
+
+Some known agent names are explicit-only until a stable runtime signal is documented:
+
+- Mistral Vibe: set `AI_AGENT=mistral-vibe`
+- v0: set `AI_AGENT=v0`
 
 ## Tool Author Pattern
 
@@ -46,4 +54,3 @@ Use `agenthint doctor` to inspect the active signals:
 ```sh
 agenthint doctor
 ```
-

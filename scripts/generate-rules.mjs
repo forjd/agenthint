@@ -2,6 +2,9 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const rules = JSON.parse(readFileSync("fixtures/detection-rules.json", "utf8"));
+const rulesJson = `${JSON.stringify(rules, null, 2)}\n`;
+
+writeFileSync("python/agenthint/detection-rules.json", rulesJson);
 
 writeFileSync(
   "src/generated-rules.ts",
@@ -73,7 +76,11 @@ ${rustParentRules}
 `,
 );
 
-execFileSync("npx", ["biome", "format", "--write", "src/generated-rules.ts"], {
-  stdio: "inherit",
-});
+execFileSync(
+  "npx",
+  ["biome", "format", "--write", "src/generated-rules.ts", "python/agenthint/detection-rules.json"],
+  {
+    stdio: "inherit",
+  },
+);
 execFileSync("cargo", ["fmt", "--all"], { stdio: "inherit" });

@@ -40,8 +40,9 @@
     "rust:format:check": "cargo fmt --all --check",
     "rust:lint": "cargo clippy --workspace --all-targets -- -D warnings",
     "rust:test": "cargo test --workspace",
+    "python:test": "PYTHONPATH=python python3 -m unittest discover -s test -p 'python_test.py'",
     "test": "npm run build && node --test test/*.test.mjs",
-    "check": "npm run format:check && npm run lint && npm run test && npm run rust:format:check && npm run rust:lint && npm run rust:test",
+    "check": "npm run format:check && npm run lint && npm run test && npm run rust:format:check && npm run rust:lint && npm run rust:test && npm run python:test",
     "prepare": "husky",
     "prepack": "npm run build"
   },

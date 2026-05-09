@@ -209,11 +209,11 @@ Current:
 
 - `agenthint` JavaScript/TypeScript package
 - `agenthint` Rust crate and CLI implementation
+- `agenthint` Python package
 
 Planned:
 
 - standalone native binary releases
-- Python package
 
 The unscoped `agenthint` name currently appears available on npm and crates.io. If the npm name becomes unavailable before first publish, the fallback package name is `@forjd/agenthint`.
 

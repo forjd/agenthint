@@ -32,6 +32,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "generate:rules": "node scripts/generate-rules.mjs",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",

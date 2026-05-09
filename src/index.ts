@@ -1,31 +1,15 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
+import {
+  ENVIRONMENT_RULES,
+  type GeneratedKnownAgent,
+  KNOWN_AGENTS,
+  PARENT_PROCESS_RULES,
+  PREFIX_RULES,
+} from "./generated-rules.js";
 
-export type KnownAgent =
-  | "codex"
-  | "claude-code"
-  | "cowork"
-  | "aider"
-  | "cursor"
-  | "gemini"
-  | "augment-cli"
-  | "amp"
-  | "opencode"
-  | "copilot"
-  | "replit"
-  | "devin"
-  | "antigravity"
-  | "pi"
-  | "kiro-cli"
-  | "windsurf"
-  | "cline"
-  | "roo-code"
-  | "kilocode"
-  | "openclaw"
-  | "mistral-vibe"
-  | "v0"
-  | "unknown";
+export type KnownAgent = GeneratedKnownAgent;
 
 export type AgentName = KnownAgent | (string & {});
 
@@ -56,109 +40,33 @@ type DetectionRule = {
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 
 const DETECTION_RULES: DetectionRule[] = [
-  {
-    agent: "cursor",
-    confidence: 0.92,
-    match: (env) => present(env, ["CURSOR_AGENT"]),
-  },
-  {
-    agent: "gemini",
-    confidence: 0.92,
-    match: (env) => present(env, ["GEMINI_CLI"]),
-  },
-  {
-    agent: "codex",
-    confidence: 0.92,
-    match: (env) =>
-      present(env, [
-        "CODEX_SANDBOX",
-        "CODEX_CI",
-        "CODEX_THREAD_ID",
-        "CODEX_HOME",
-        "CODEX_USER_AGENT",
-      ]),
-  },
-  {
-    agent: "augment-cli",
-    confidence: 0.9,
-    match: (env) => present(env, ["AUGMENT_AGENT"]),
-  },
-  {
-    agent: "amp",
-    confidence: 0.9,
-    match: (env) => present(env, ["AMP_CURRENT_THREAD_ID"]),
-  },
-  {
-    agent: "opencode",
-    confidence: 0.9,
-    match: (env) => present(env, ["OPENCODE_CLIENT", "OPENCODE"]),
-  },
-  {
-    agent: (env) => (present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code"),
-    confidence: 0.9,
-    match: (env) => present(env, ["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"]),
-  },
-  {
-    agent: "copilot",
-    confidence: 0.88,
-    match: (env) =>
-      present(env, ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_GITHUB_TOKEN", "COPILOT_CLI"]),
-  },
-  {
-    agent: "aider",
-    confidence: 0.86,
-    match: (env) => prefixPresent(env, "AIDER_"),
-  },
-  {
-    agent: "cursor",
-    confidence: 0.82,
-    match: (env) => prefixPresent(env, "CURSOR_"),
-  },
-  {
-    agent: "replit",
-    confidence: 0.65,
-    match: (env) => present(env, ["REPL_ID"]),
-  },
-  {
-    agent: "antigravity",
-    confidence: 0.9,
-    match: (env) => present(env, ["ANTIGRAVITY_AGENT"]),
-  },
-  {
-    agent: "pi",
-    confidence: 0.9,
-    match: (env) => present(env, ["PI_CODING_AGENT"]),
-  },
-  {
-    agent: "kiro-cli",
-    confidence: 0.9,
-    match: (env) => present(env, ["KIRO_AGENT_PATH"]),
-  },
-  {
-    agent: "windsurf",
-    confidence: 0.82,
-    match: (env) => present(env, ["WINDSURF_AGENT"]),
-  },
-  {
-    agent: "cline",
-    confidence: 0.82,
-    match: (env) => present(env, ["CLINE_AGENT"]),
-  },
-  {
-    agent: "roo-code",
-    confidence: 0.82,
-    match: (env) => present(env, ["ROO_CODE_AGENT", "ROO_CODE"]),
-  },
-  {
-    agent: "kilocode",
-    confidence: 0.82,
-    match: (env) => present(env, ["KILOCODE_AGENT"]),
-  },
-  {
-    agent: "openclaw",
-    confidence: 0.82,
-    match: (env) => present(env, ["OPENCLAW_AGENT"]),
-  },
+  ...ENVIRONMENT_RULES.flatMap((rule) => {
+    const generatedRule = {
+      agent: rule.agent,
+      confidence: rule.confidence,
+      match: (env: NodeJS.ProcessEnv) => present(env, [...rule.names]),
+    };
+
+    if (rule.agent !== "opencode") {
+      return [generatedRule];
+    }
+
+    return [
+      generatedRule,
+      {
+        agent: (env: NodeJS.ProcessEnv) =>
+          present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code",
+        confidence: 0.9,
+        match: (env: NodeJS.ProcessEnv) =>
+          present(env, ["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"]),
+      },
+    ];
+  }),
+  ...PREFIX_RULES.map((rule) => ({
+    agent: rule.agent,
+    confidence: rule.confidence,
+    match: (env: NodeJS.ProcessEnv) => prefixPresent(env, rule.prefix),
+  })),
 ];
 
 export function detectAgent(options: DetectAgentOptions = {}): AgentHintResult {
@@ -328,35 +236,10 @@ function normalizeProcessName(value: string | null | undefined): string | null {
 }
 
 function agentFromProcessName(name: string): KnownAgent | null {
-  if (name === "codex") {
-    return "codex";
-  }
-
-  if (name === "claude" || name === "claude-code") {
-    return "claude-code";
-  }
-
-  if (name === "cursor-agent" || name === "cursor") {
-    return "cursor";
-  }
-
-  if (name === "gemini") {
-    return "gemini";
-  }
-
-  if (name === "aider") {
-    return "aider";
-  }
-
-  if (name === "opencode") {
-    return "opencode";
-  }
-
-  if (name === "amp") {
-    return "amp";
-  }
-
-  return null;
+  return (
+    PARENT_PROCESS_RULES.find((rule) => (rule.names as readonly string[]).includes(name))?.agent ??
+    null
+  );
 }
 
 function present(env: NodeJS.ProcessEnv, names: string[]): string[] {
@@ -408,31 +291,7 @@ function normalizeAgentName(value: string | undefined): AgentName | null {
 }
 
 function isKnownAgent(value: string): value is KnownAgent {
-  return (
-    value === "codex" ||
-    value === "claude-code" ||
-    value === "cowork" ||
-    value === "aider" ||
-    value === "cursor" ||
-    value === "gemini" ||
-    value === "augment-cli" ||
-    value === "amp" ||
-    value === "opencode" ||
-    value === "copilot" ||
-    value === "replit" ||
-    value === "devin" ||
-    value === "antigravity" ||
-    value === "pi" ||
-    value === "kiro-cli" ||
-    value === "windsurf" ||
-    value === "cline" ||
-    value === "roo-code" ||
-    value === "kilocode" ||
-    value === "openclaw" ||
-    value === "mistral-vibe" ||
-    value === "v0" ||
-    value === "unknown"
-  );
+  return KNOWN_AGENTS.includes(value as KnownAgent);
 }
 
 function ttyHints(options: DetectAgentOptions): string[] {

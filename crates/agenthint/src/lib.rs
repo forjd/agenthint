@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 
+mod generated_rules;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentHintResult {
     pub is_agent: bool,
@@ -239,80 +241,29 @@ fn from_ai_agent_env_var(env: &HashMap<String, String>) -> Option<AgentHintResul
 fn detection_matches(env: &HashMap<String, String>) -> Vec<AgentMatch> {
     let mut matches = Vec::new();
 
-    push_present(&mut matches, env, "cursor", 0.92, &["CURSOR_AGENT"]);
-    push_present(&mut matches, env, "gemini", 0.92, &["GEMINI_CLI"]);
-    push_present(
-        &mut matches,
-        env,
-        "codex",
-        0.92,
-        &[
-            "CODEX_SANDBOX",
-            "CODEX_CI",
-            "CODEX_THREAD_ID",
-            "CODEX_HOME",
-            "CODEX_USER_AGENT",
-        ],
-    );
-    push_present(&mut matches, env, "augment-cli", 0.9, &["AUGMENT_AGENT"]);
-    push_present(&mut matches, env, "amp", 0.9, &["AMP_CURRENT_THREAD_ID"]);
-    push_present(
-        &mut matches,
-        env,
-        "opencode",
-        0.9,
-        &["OPENCODE_CLIENT", "OPENCODE"],
-    );
+    for rule in generated_rules::ENVIRONMENT_RULES {
+        push_present(&mut matches, env, rule.agent, rule.confidence, rule.names);
 
-    let claude_signals = present(env, &["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"]);
-    if !claude_signals.is_empty() {
-        let agent = if present(env, &["CLAUDE_CODE_IS_COWORK"]).is_empty() {
-            "claude-code"
-        } else {
-            "cowork"
-        };
-        matches.push(AgentMatch {
-            agent: agent.to_string(),
-            confidence: 0.9,
-            signals: claude_signals,
-        });
+        if rule.agent == "opencode" {
+            let claude_signals = present(env, &["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"]);
+            if !claude_signals.is_empty() {
+                let agent = if present(env, &["CLAUDE_CODE_IS_COWORK"]).is_empty() {
+                    "claude-code"
+                } else {
+                    "cowork"
+                };
+                matches.push(AgentMatch {
+                    agent: agent.to_string(),
+                    confidence: 0.9,
+                    signals: claude_signals,
+                });
+            }
+        }
     }
 
-    push_present(
-        &mut matches,
-        env,
-        "copilot",
-        0.88,
-        &[
-            "COPILOT_MODEL",
-            "COPILOT_ALLOW_ALL",
-            "COPILOT_GITHUB_TOKEN",
-            "COPILOT_CLI",
-        ],
-    );
-    push_prefix(&mut matches, env, "aider", 0.86, "AIDER_");
-    push_prefix(&mut matches, env, "cursor", 0.82, "CURSOR_");
-    push_present(&mut matches, env, "replit", 0.65, &["REPL_ID"]);
-    push_present(
-        &mut matches,
-        env,
-        "antigravity",
-        0.9,
-        &["ANTIGRAVITY_AGENT"],
-    );
-    push_present(&mut matches, env, "pi", 0.9, &["PI_CODING_AGENT"]);
-    push_present(&mut matches, env, "kiro-cli", 0.9, &["KIRO_AGENT_PATH"]);
-    push_present(&mut matches, env, "windsurf", 0.82, &["WINDSURF_AGENT"]);
-    push_present(&mut matches, env, "cline", 0.82, &["CLINE_AGENT"]);
-    push_present(
-        &mut matches,
-        env,
-        "roo-code",
-        0.82,
-        &["ROO_CODE_AGENT", "ROO_CODE"],
-    );
-    push_present(&mut matches, env, "kilocode", 0.82, &["KILOCODE_AGENT"]);
-    push_present(&mut matches, env, "openclaw", 0.82, &["OPENCLAW_AGENT"]);
+    for rule in generated_rules::PREFIX_RULES {
+        push_prefix(&mut matches, env, rule.agent, rule.confidence, rule.prefix);
+    }
 
     matches
 }
@@ -395,16 +346,10 @@ fn normalize_process_name(value: &str) -> Option<String> {
 }
 
 fn agent_from_process_name(name: &str) -> Option<&'static str> {
-    match name {
-        "codex" => Some("codex"),
-        "claude" | "claude-code" => Some("claude-code"),
-        "cursor-agent" | "cursor" => Some("cursor"),
-        "gemini" => Some("gemini"),
-        "aider" => Some("aider"),
-        "opencode" => Some("opencode"),
-        "amp" => Some("amp"),
-        _ => None,
-    }
+    generated_rules::PARENT_PROCESS_RULES
+        .iter()
+        .find(|rule| rule.names.contains(&name))
+        .map(|rule| rule.agent)
 }
 
 fn push_present(

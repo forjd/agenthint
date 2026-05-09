@@ -67,7 +67,7 @@ agenthint --json      # print the structured detection result
 agenthint --explain   # print a short explanation
 agenthint doctor      # print detection details and setup advice
 agenthint doctor --json
-                    # print detection details and setup advice as JSON
+                      # print detection details and setup advice as JSON
 agenthint init codex  # print the recommended AI_AGENT value
 ```
 
@@ -95,6 +95,13 @@ Install from crates.io:
 
 ```sh
 cargo install agenthint
+agenthint --json
+```
+
+Install from PyPI:
+
+```sh
+python3 -m pip install agenthint
 agenthint --json
 ```
 
@@ -145,6 +152,18 @@ Run the Rust CLI locally:
 cargo run -q -p agenthint -- --json
 ```
 
+## Python API
+
+```python
+from agenthint import detect_agent
+
+result = detect_agent()
+
+if result.is_agent:
+    # Prefer structured, quiet, non-interactive output.
+    pass
+```
+
 ## Detection Model
 
 The result includes:
@@ -161,7 +180,8 @@ Detection priority:
 3. explicit `AI_AGENT`
 4. known environment signals
 5. documented filesystem signals
-6. low-confidence stdio hints
+6. low-confidence parent process signals
+7. low-confidence stdio hints
 
 ## Supported Agents
 
@@ -187,6 +207,7 @@ Current known agent names include:
 - Cline
 - Roo Code
 - Kilo Code
+- Mistral Vibe
 - v0
 
 Custom agents are supported through any non-empty `AI_AGENT` value.
@@ -219,11 +240,11 @@ Planned:
 
 - standalone native binary releases
 
-The unscoped `agenthint` name currently appears available on npm and crates.io. If the npm name becomes unavailable before first publish, the fallback package name is `@forjd/agenthint`.
+The packages use the unscoped `agenthint` name across npm, crates.io, and PyPI. If the npm name becomes unavailable before first publish, the fallback package name is `@forjd/agenthint`.
 
 ## CI and Releases
 
-GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, npm package checks, and `cargo publish --dry-run`.
+GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, Python tests, npm package checks, and `cargo publish --dry-run`.
 
 Releases use release-please with Conventional Commits. npm publishing is configured for trusted publishing via GitHub Actions OIDC, so no long-lived npm token is required. Before the first npm publish, configure the trusted publisher in npm package settings for `forjd/agenthint` and `.github/workflows/release.yml`.
 
@@ -250,6 +271,8 @@ Useful commands:
 npm run format
 npm run lint
 npm test
+npm run python:test
+npm run generate:rules
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 ```

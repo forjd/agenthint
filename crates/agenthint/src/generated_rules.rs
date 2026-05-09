@@ -56,6 +56,11 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
         names: &["OPENCODE_CLIENT", "OPENCODE"],
     },
     EnvironmentRule {
+        agent: "claude-code",
+        confidence: 0.9,
+        names: &["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"],
+    },
+    EnvironmentRule {
         agent: "copilot",
         confidence: 0.88,
         names: &[

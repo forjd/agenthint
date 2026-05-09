@@ -40,28 +40,15 @@ type DetectionRule = {
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 
 const DETECTION_RULES: DetectionRule[] = [
-  ...ENVIRONMENT_RULES.flatMap((rule) => {
-    const generatedRule = {
-      agent: rule.agent,
-      confidence: rule.confidence,
-      match: (env: NodeJS.ProcessEnv) => present(env, [...rule.names]),
-    };
-
-    if (rule.agent !== "opencode") {
-      return [generatedRule];
-    }
-
-    return [
-      generatedRule,
-      {
-        agent: (env: NodeJS.ProcessEnv) =>
-          present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code",
-        confidence: 0.9,
-        match: (env: NodeJS.ProcessEnv) =>
-          present(env, ["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"]),
-      },
-    ];
-  }),
+  ...ENVIRONMENT_RULES.map((rule) => ({
+    agent:
+      rule.agent === "claude-code"
+        ? (env: NodeJS.ProcessEnv) =>
+            present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code"
+        : rule.agent,
+    confidence: rule.confidence,
+    match: (env: NodeJS.ProcessEnv) => present(env, [...rule.names]),
+  })),
   ...PREFIX_RULES.map((rule) => ({
     agent: rule.agent,
     confidence: rule.confidence,
@@ -101,7 +88,9 @@ export function detectAgent(options: DetectAgentOptions = {}): AgentHintResult {
   }).filter((rule) => rule.signals.length > 0);
 
   if (matches.length > 0) {
-    const best = matches[0];
+    const best = matches.reduce((currentBest, match) =>
+      match.confidence > currentBest.confidence ? match : currentBest,
+    );
 
     return {
       isAgent: true,

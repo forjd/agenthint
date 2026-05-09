@@ -54,9 +54,10 @@ Initial candidates:
 - `CODEX_CI`
 - `CODEX_THREAD_ID`
 - `CODEX_HOME`
+- `CODEX_USER_AGENT`
 - `CLAUDECODE`
 - `CLAUDE_CODE`
-- `CLAUDE_CODE_IS_COWORK`
+- `CLAUDECODE_CWD`
 - `AIDER_*`
 - `CURSOR_AGENT`
 - `GEMINI_CLI`
@@ -82,6 +83,8 @@ Initial candidates:
 - `AGENTHINT_DISABLE`
 
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
+
+`CLAUDE_CODE_IS_COWORK` is a classifier only. It may select `cowork` when another Claude signal is present, but should not be treated as an agent signal by itself.
 
 Known agent names without stable heuristic signals should still be supported through `AI_AGENT`.
 Current explicit-only known names:

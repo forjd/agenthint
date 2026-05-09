@@ -59,7 +59,7 @@ def detect_agent(
 
     matches = _detection_matches(env)
     if matches:
-        best = matches[0]
+        best = max(matches, key=lambda match: match["confidence"])
         return AgentHintResult(True, best["agent"], best["confidence"], [signal for match in matches for signal in match["signals"]])
 
     if check_filesystem and file_exists("/opt/.devin"):
@@ -106,13 +106,8 @@ def _detection_matches(env: Mapping[str, str]) -> list[dict[str, object]]:
     for rule in rules["environmentRules"]:
         signals = _present(env, rule["names"])
         if signals:
-            matches.append({"agent": rule["agent"], "confidence": rule["confidence"], "signals": signals})
-
-        if rule["agent"] == "opencode":
-            claude_signals = _present(env, ["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"])
-            if claude_signals:
-                agent = "cowork" if _present(env, ["CLAUDE_CODE_IS_COWORK"]) else "claude-code"
-                matches.append({"agent": agent, "confidence": 0.9, "signals": claude_signals})
+            agent = "cowork" if rule["agent"] == "claude-code" and _present(env, ["CLAUDE_CODE_IS_COWORK"]) else rule["agent"]
+            matches.append({"agent": agent, "confidence": rule["confidence"], "signals": signals})
 
     for rule in rules["prefixRules"]:
         signals = _prefix_present(env, rule["prefix"])

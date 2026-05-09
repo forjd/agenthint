@@ -77,7 +77,10 @@ pub fn detect_agent_with_options(options: DetectAgentOptions) -> AgentHintResult
     }
 
     let matches = detection_matches(&options.env);
-    if let Some(best) = matches.first() {
+    if let Some(best) = matches
+        .iter()
+        .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
+    {
         return AgentHintResult {
             is_agent: true,
             agent: Some(best.agent.clone()),
@@ -289,23 +292,15 @@ fn detection_matches(env: &HashMap<String, String>) -> Vec<AgentMatch> {
     let mut matches = Vec::new();
 
     for rule in generated_rules::ENVIRONMENT_RULES {
-        push_present(&mut matches, env, rule.agent, rule.confidence, rule.names);
+        let agent = if rule.agent == "claude-code"
+            && !present(env, &["CLAUDE_CODE_IS_COWORK"]).is_empty()
+        {
+            "cowork"
+        } else {
+            rule.agent
+        };
 
-        if rule.agent == "opencode" {
-            let claude_signals = present(env, &["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"]);
-            if !claude_signals.is_empty() {
-                let agent = if present(env, &["CLAUDE_CODE_IS_COWORK"]).is_empty() {
-                    "claude-code"
-                } else {
-                    "cowork"
-                };
-                matches.push(AgentMatch {
-                    agent: agent.to_string(),
-                    confidence: 0.9,
-                    signals: claude_signals,
-                });
-            }
-        }
+        push_present(&mut matches, env, agent, rule.confidence, rule.names);
     }
 
     for rule in generated_rules::PREFIX_RULES {
@@ -545,6 +540,7 @@ mod tests {
         detect_agent_with_options(DetectAgentOptions {
             env,
             check_filesystem: false,
+            check_parent_process: false,
             ..DetectAgentOptions::default()
         })
     }

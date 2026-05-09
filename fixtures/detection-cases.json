@@ -64,6 +64,14 @@
     "signals": ["env:AIDER_MODEL"]
   },
   {
+    "name": "stronger heuristic wins over earlier weaker signal",
+    "env": { "REPL_ID": "repl-id", "ANTIGRAVITY_AGENT": "1" },
+    "isAgent": true,
+    "agent": "antigravity",
+    "confidence": 0.9,
+    "signals": ["env:REPL_ID", "env:ANTIGRAVITY_AGENT"]
+  },
+  {
     "name": "forced agent",
     "env": { "AGENTHINT_FORCE": "true", "AGENTHINT_AGENT": "cursor" },
     "isAgent": true,

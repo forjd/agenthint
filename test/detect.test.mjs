@@ -8,7 +8,11 @@ const fixtureCases = JSON.parse(readFileSync("fixtures/detection-cases.json", "u
 describe("detectAgent", () => {
   it("matches shared detection fixtures", () => {
     for (const fixture of fixtureCases) {
-      const result = detectAgent({ env: fixture.env, checkFilesystem: false });
+      const result = detectAgent({
+        env: fixture.env,
+        checkFilesystem: false,
+        checkParentProcess: false,
+      });
 
       assert.equal(result.isAgent, fixture.isAgent, fixture.name);
       assert.equal(result.agent, fixture.agent, fixture.name);
@@ -27,7 +31,11 @@ describe("detectAgent", () => {
   });
 
   it("trims and ignores empty AI_AGENT values", () => {
-    const result = detectAgent({ env: { AI_AGENT: "  " }, checkFilesystem: false });
+    const result = detectAgent({
+      env: { AI_AGENT: "  " },
+      checkFilesystem: false,
+      checkParentProcess: false,
+    });
 
     assert.equal(result.isAgent, false);
     assert.equal(result.agent, null);
@@ -60,7 +68,11 @@ describe("detectAgent", () => {
 
   it("detects Cowork only when a Claude signal is present", () => {
     const cowork = detectAgent({ env: { CLAUDE_CODE: "1", CLAUDE_CODE_IS_COWORK: "1" } });
-    const notCowork = detectAgent({ env: { CLAUDE_CODE_IS_COWORK: "1" }, checkFilesystem: false });
+    const notCowork = detectAgent({
+      env: { CLAUDE_CODE_IS_COWORK: "1" },
+      checkFilesystem: false,
+      checkParentProcess: false,
+    });
 
     assert.equal(cowork.isAgent, true);
     assert.equal(cowork.agent, "cowork");
@@ -154,6 +166,7 @@ describe("detectAgent", () => {
     const result = detectAgent({
       env: {},
       checkFilesystem: false,
+      checkParentProcess: false,
       fileExists: () => true,
     });
 
@@ -164,9 +177,12 @@ describe("detectAgent", () => {
   it("uses known environment priority order", () => {
     const cursorWins = detectAgent({ env: { CURSOR_AGENT: "1", CLAUDECODE: "1" } });
     const claudeWins = detectAgent({ env: { CLAUDECODE: "1", REPL_ID: "repl-id" } });
+    const strongerWins = detectAgent({ env: { REPL_ID: "repl-id", ANTIGRAVITY_AGENT: "1" } });
 
     assert.equal(cursorWins.agent, "cursor");
     assert.equal(claudeWins.agent, "claude-code");
+    assert.equal(strongerWins.agent, "antigravity");
+    assert.equal(strongerWins.confidence, 0.9);
   });
 
   it("supports AGENTHINT_FORCE", () => {
@@ -188,7 +204,13 @@ describe("detectAgent", () => {
   });
 
   it("reports low-confidence stdio hints without marking them as an agent", () => {
-    const result = detectAgent({ env: {}, stdoutIsTTY: false, stdinIsTTY: false });
+    const result = detectAgent({
+      env: {},
+      checkFilesystem: false,
+      checkParentProcess: false,
+      stdoutIsTTY: false,
+      stdinIsTTY: false,
+    });
 
     assert.equal(result.isAgent, false);
     assert.equal(result.agent, null);

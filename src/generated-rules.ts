@@ -61,6 +61,11 @@ export const ENVIRONMENT_RULES = [
     names: ["OPENCODE_CLIENT", "OPENCODE"],
   },
   {
+    agent: "claude-code",
+    confidence: 0.9,
+    names: ["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"],
+  },
+  {
     agent: "copilot",
     confidence: 0.88,
     names: ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_GITHUB_TOKEN", "COPILOT_CLI"],

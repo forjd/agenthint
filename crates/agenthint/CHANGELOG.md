@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/forjd/agenthint/compare/agenthint-v0.4.0...agenthint-v0.4.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* align detection rule precedence ([5e3176a](https://github.com/forjd/agenthint/commit/5e3176a58e01003fede70236ef2c382f40aea8a1))
+* enforce cli usage contract ([465b100](https://github.com/forjd/agenthint/commit/465b100a80be36270ac18c5cb14af4453492286b))
+* harden rust output formatting ([226458d](https://github.com/forjd/agenthint/commit/226458d5e901705d6044cdf0df4dd3eb74dea88e))
+
 ## [0.4.0](https://github.com/forjd/agenthint/compare/agenthint-v0.3.0...agenthint-v0.4.0) (2026-05-09)
 
 

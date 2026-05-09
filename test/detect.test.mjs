@@ -125,6 +125,31 @@ describe("detectAgent", () => {
     assert.deepEqual(result.signals, ["file:/opt/.devin"]);
   });
 
+  it("detects known parent process names at low confidence", () => {
+    const result = detectAgent({
+      env: {},
+      checkFilesystem: false,
+      parentProcessName: "/usr/local/bin/codex",
+    });
+
+    assert.equal(result.isAgent, true);
+    assert.equal(result.agent, "codex");
+    assert.equal(result.confidence, 0.55);
+    assert.deepEqual(result.signals, ["process:parent:codex"]);
+  });
+
+  it("can skip parent process checks", () => {
+    const result = detectAgent({
+      env: {},
+      checkFilesystem: false,
+      checkParentProcess: false,
+      parentProcessName: "codex",
+    });
+
+    assert.equal(result.isAgent, false);
+    assert.equal(result.agent, null);
+  });
+
   it("can skip filesystem checks", () => {
     const result = detectAgent({
       env: {},

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::Path;
+use std::process::Command;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AgentHintResult {
@@ -26,6 +27,8 @@ pub struct DetectAgentOptions {
     pub stdin_is_tty: Option<bool>,
     pub stdout_is_tty: Option<bool>,
     pub check_filesystem: bool,
+    pub check_parent_process: bool,
+    pub parent_process_name: Option<String>,
 }
 
 impl Default for DetectAgentOptions {
@@ -35,6 +38,8 @@ impl Default for DetectAgentOptions {
             stdin_is_tty: None,
             stdout_is_tty: None,
             check_filesystem: true,
+            check_parent_process: true,
+            parent_process_name: None,
         }
     }
 }
@@ -89,6 +94,10 @@ pub fn detect_agent_with_options(options: DetectAgentOptions) -> AgentHintResult
             confidence: 0.9,
             signals: vec!["file:/opt/.devin".to_string()],
         };
+    }
+
+    if let Some(result) = from_parent_process(&options) {
+        return result;
     }
 
     let tty_signals = tty_hints(&options);
@@ -306,6 +315,96 @@ fn detection_matches(env: &HashMap<String, String>) -> Vec<AgentMatch> {
     push_present(&mut matches, env, "openclaw", 0.82, &["OPENCLAW_AGENT"]);
 
     matches
+}
+
+fn from_parent_process(options: &DetectAgentOptions) -> Option<AgentHintResult> {
+    if !options.check_parent_process {
+        return None;
+    }
+
+    let raw_name = options
+        .parent_process_name
+        .clone()
+        .or_else(parent_process_name)?;
+    let name = normalize_process_name(&raw_name)?;
+    let agent = agent_from_process_name(&name)?;
+
+    Some(AgentHintResult {
+        is_agent: true,
+        agent: Some(agent.to_string()),
+        confidence: 0.55,
+        signals: vec![format!("process:parent:{name}")],
+    })
+}
+
+fn parent_process_name() -> Option<String> {
+    let ppid_output = Command::new("ps")
+        .args(["-o", "ppid=", "-p", &std::process::id().to_string()])
+        .output()
+        .ok()?;
+
+    if !ppid_output.status.success() {
+        return None;
+    }
+
+    let ppid = String::from_utf8(ppid_output.stdout).ok()?;
+    let ppid = ppid.trim();
+
+    if ppid.is_empty() {
+        return None;
+    }
+
+    let proc_path = format!("/proc/{ppid}/comm");
+
+    if let Ok(value) = std::fs::read_to_string(proc_path) {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed.to_string());
+        }
+    }
+
+    let output = Command::new("ps")
+        .args(["-o", "comm=", "-p", ppid])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8(output.stdout).ok()?;
+    let trimmed = value.trim();
+
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
+fn normalize_process_name(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let file_name = Path::new(trimmed).file_name()?.to_string_lossy();
+    let lower = file_name.to_lowercase();
+
+    Some(lower.strip_suffix(".exe").unwrap_or(&lower).to_string())
+}
+
+fn agent_from_process_name(name: &str) -> Option<&'static str> {
+    match name {
+        "codex" => Some("codex"),
+        "claude" | "claude-code" => Some("claude-code"),
+        "cursor-agent" | "cursor" => Some("cursor"),
+        "gemini" => Some("gemini"),
+        "aider" => Some("aider"),
+        "opencode" => Some("opencode"),
+        "amp" => Some("amp"),
+        _ => None,
+    }
 }
 
 fn push_present(
@@ -588,6 +687,35 @@ mod tests {
     }
 
     #[test]
+    fn detects_known_parent_process_names() {
+        let result = detect_agent_with_options(DetectAgentOptions {
+            env: HashMap::new(),
+            check_filesystem: false,
+            parent_process_name: Some("/usr/local/bin/codex".to_string()),
+            ..DetectAgentOptions::default()
+        });
+
+        assert!(result.is_agent);
+        assert_eq!(result.agent.as_deref(), Some("codex"));
+        assert_eq!(result.confidence, 0.55);
+        assert_eq!(result.signals, vec!["process:parent:codex"]);
+    }
+
+    #[test]
+    fn can_skip_parent_process_checks() {
+        let result = detect_agent_with_options(DetectAgentOptions {
+            env: HashMap::new(),
+            check_filesystem: false,
+            check_parent_process: false,
+            parent_process_name: Some("codex".to_string()),
+            ..DetectAgentOptions::default()
+        });
+
+        assert!(!result.is_agent);
+        assert_eq!(result.agent, None);
+    }
+
+    #[test]
     fn detects_known_environment_signals() {
         let cases = [
             ("cursor", vec![("CURSOR_AGENT", "1")]),
@@ -649,6 +777,7 @@ mod tests {
             stdout_is_tty: Some(false),
             stdin_is_tty: Some(false),
             check_filesystem: false,
+            ..DetectAgentOptions::default()
         });
 
         assert!(!result.is_agent);

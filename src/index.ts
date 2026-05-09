@@ -1,4 +1,6 @@
-import { existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { basename } from "node:path";
 
 export type KnownAgent =
   | "codex"
@@ -39,6 +41,9 @@ export type DetectAgentOptions = {
   stdoutIsTTY?: boolean;
   stdinIsTTY?: boolean;
   checkFilesystem?: boolean;
+  checkParentProcess?: boolean;
+  parentProcessName?: string;
+  getParentProcessName?: () => string | null | undefined;
   fileExists?: (path: string) => boolean;
 };
 
@@ -203,6 +208,11 @@ export function detectAgent(options: DetectAgentOptions = {}): AgentHintResult {
     return filesystemResult;
   }
 
+  const parentProcessResult = fromParentProcess(options);
+  if (parentProcessResult != null) {
+    return parentProcessResult;
+  }
+
   const ttySignals = ttyHints(options);
   if (ttySignals.length > 0) {
     return {
@@ -250,6 +260,100 @@ function fromFileSystem(options: DetectAgentOptions): AgentHintResult | null {
       confidence: 0.9,
       signals: ["file:/opt/.devin"],
     };
+  }
+
+  return null;
+}
+
+function fromParentProcess(options: DetectAgentOptions): AgentHintResult | null {
+  if (options.checkParentProcess === false) {
+    return null;
+  }
+
+  const rawName =
+    options.parentProcessName ?? options.getParentProcessName?.() ?? parentProcessName();
+  const name = normalizeProcessName(rawName);
+
+  if (name == null) {
+    return null;
+  }
+
+  const agent = agentFromProcessName(name);
+
+  if (agent == null) {
+    return null;
+  }
+
+  return {
+    isAgent: true,
+    agent,
+    confidence: 0.55,
+    signals: [`process:parent:${name}`],
+  };
+}
+
+function parentProcessName(): string | null {
+  const ppid = process.ppid;
+
+  if (ppid == null || ppid <= 0) {
+    return null;
+  }
+
+  try {
+    return readFileSync(`/proc/${ppid}/comm`, "utf8").trim();
+  } catch {
+    // Fall through to ps for platforms without /proc, including macOS.
+  }
+
+  try {
+    return execFileSync("ps", ["-o", "comm=", "-p", String(ppid)], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeProcessName(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+
+  if (trimmed == null || trimmed === "") {
+    return null;
+  }
+
+  return basename(trimmed)
+    .replace(/\.exe$/i, "")
+    .toLowerCase();
+}
+
+function agentFromProcessName(name: string): KnownAgent | null {
+  if (name === "codex") {
+    return "codex";
+  }
+
+  if (name === "claude" || name === "claude-code") {
+    return "claude-code";
+  }
+
+  if (name === "cursor-agent" || name === "cursor") {
+    return "cursor";
+  }
+
+  if (name === "gemini") {
+    return "gemini";
+  }
+
+  if (name === "aider") {
+    return "aider";
+  }
+
+  if (name === "opencode") {
+    return "opencode";
+  }
+
+  if (name === "amp") {
+    return "amp";
   }
 
   return null;

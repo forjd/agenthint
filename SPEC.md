@@ -39,6 +39,12 @@ AI_AGENT=my-custom-agent my-tool
 
 `AI_AGENT` should be checked before heuristic signals. Empty and whitespace-only values should be ignored.
 
+## Parent Process Signals
+
+Implementations may inspect the direct parent process name as a low-confidence heuristic. Parent process checks should be configurable because process names can be unavailable, ambiguous, platform-specific, or controlled by wrappers.
+
+Parent process diagnostics should report only a normalized executable name, for example `process:parent:codex`, not a full path.
+
 ## Known Environment Signals
 
 Initial candidates:

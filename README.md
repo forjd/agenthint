@@ -195,6 +195,8 @@ See [docs/agents.md](docs/agents.md) for recommended `AI_AGENT` values.
 
 See [docs/integrations.md](docs/integrations.md) for Bash, Zsh, Fish, Node.js, Rust, and Python integration snippets.
 
+See [docs/signals.md](docs/signals.md) for the signal registry and confidence levels.
+
 ## Principles
 
 - Detection is advisory and can be spoofed.

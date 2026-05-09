@@ -27,6 +27,13 @@
     ]
   },
   {
+    "name": "doctor heuristic codex json",
+    "args": ["doctor", "--json"],
+    "env": { "CODEX_SANDBOX": "1" },
+    "status": 0,
+    "stdout": "{\n  \"status\": \"agent runtime likely detected\",\n  \"agent\": \"codex\",\n  \"confidence\": 0.92,\n  \"signals\": [\n    \"env:CODEX_SANDBOX\"\n  ],\n  \"setup\": {\n    \"kind\": \"heuristic\",\n    \"message\": \"Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\",\n    \"hint\": \"Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls.\"\n  },\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}\n"
+  },
+  {
     "name": "init codex",
     "args": ["init", "codex"],
     "env": {},

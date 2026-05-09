@@ -1,4 +1,6 @@
-use agenthint::{detect_agent, format_doctor, format_explanation, format_init, to_json};
+use agenthint::{
+    detect_agent, format_doctor, format_doctor_json, format_explanation, format_init, to_json,
+};
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
@@ -17,7 +19,11 @@ fn main() {
         );
         std::process::exit(0);
     } else if args.iter().any(|arg| arg == "doctor") {
-        println!("{}", format_doctor(&result));
+        if args.iter().any(|arg| arg == "--json") {
+            println!("{}", format_doctor_json(&result));
+        } else {
+            println!("{}", format_doctor(&result));
+        }
     } else if args.iter().any(|arg| arg == "--json") {
         println!("{}", to_json(&result));
     } else if args.iter().any(|arg| arg == "--explain") {
@@ -37,6 +43,8 @@ Usage:
   agenthint             Exit 0 if an agent is likely detected, otherwise 1
   agenthint init <name> Print the recommended AI_AGENT value
   agenthint doctor      Print detection details and setup advice
+  agenthint doctor --json
+                        Print detection details and setup advice as JSON
   agenthint --json      Print the structured detection result
   agenthint --explain   Print a short human-readable explanation
   agenthint --help      Show this help"

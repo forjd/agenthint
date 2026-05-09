@@ -65,6 +65,27 @@ describe("agenthint CLI", () => {
     assert.match(result.stdout, /AI_AGENT=codex/);
   });
 
+  it("prints doctor advice as JSON", () => {
+    const result = spawnSync(process.execPath, [CLI_PATH, "doctor", "--json"], {
+      env: { CODEX_SANDBOX: "1" },
+      encoding: "utf8",
+    });
+
+    assert.equal(result.status, 0);
+    assert.deepEqual(JSON.parse(result.stdout), {
+      status: "agent runtime likely detected",
+      agent: "codex",
+      confidence: 0.92,
+      signals: ["env:CODEX_SANDBOX"],
+      setup: {
+        kind: "heuristic",
+        message: "Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.",
+        hint: "Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls.",
+      },
+      security: "use this as a UX hint only, not as a trust boundary",
+    });
+  });
+
   it("prints init advice", () => {
     const result = spawnSync(process.execPath, [CLI_PATH, "init", "codex"], {
       env: {},

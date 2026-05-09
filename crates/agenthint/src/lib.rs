@@ -167,6 +167,53 @@ pub fn format_doctor(result: &AgentHintResult) -> String {
     )
 }
 
+pub fn format_doctor_json(result: &AgentHintResult) -> String {
+    let status = if result.is_agent {
+        "agent runtime likely detected"
+    } else {
+        "agent runtime not detected"
+    };
+    let agent = result
+        .agent
+        .as_ref()
+        .map(|agent| format!("\"{}\"", escape_json(agent)))
+        .unwrap_or_else(|| "null".to_string());
+    let signals = result
+        .signals
+        .iter()
+        .map(|signal| format!("\"{}\"", escape_json(signal)))
+        .collect::<Vec<_>>()
+        .join(",\n    ");
+    let setup = doctor_setup_json(result);
+
+    format!(
+        "{{\n  \"status\": \"{status}\",\n  \"agent\": {agent},\n  \"confidence\": {},\n  \"signals\": [{}],\n  \"setup\": {setup},\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}}",
+        format_confidence(result.confidence),
+        if signals.is_empty() {
+            String::new()
+        } else {
+            format!("\n    {signals}\n  ")
+        }
+    )
+}
+
+fn doctor_setup_json(result: &AgentHintResult) -> String {
+    if result.signals.iter().any(|signal| signal == "env:AI_AGENT") {
+        return "{\n    \"kind\": \"explicit\",\n    \"message\": \"AI_AGENT is set; this is the preferred explicit convention.\"\n  }".to_string();
+    }
+
+    if result.is_agent {
+        let agent = result.agent.as_deref().unwrap_or("unknown");
+        return format!(
+            "{{\n    \"kind\": \"heuristic\",\n    \"message\": \"Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\",\n    \"hint\": \"{}\"\n  }}",
+            escape_json(&setup_hint(agent))
+        );
+    }
+
+    "{\n    \"kind\": \"missing\",\n    \"message\": \"No agent signal was detected.\",\n    \"hint\": \"Agents should set AI_AGENT=<agent-name> before invoking tools.\"\n  }"
+        .to_string()
+}
+
 pub fn format_init(agent: Option<&str>) -> String {
     let Some(agent) = normalize_agent_name(agent.map(|value| value.to_string()).as_ref()) else {
         return [
@@ -569,12 +616,16 @@ mod tests {
                 .map(|(key, value)| (key.to_string(), value.as_str().unwrap().to_string()))
                 .collect::<HashMap<_, _>>();
             let result = detect(fixture_env);
-            let output = if args.contains(&"--json") {
+            let output = if args.contains(&"doctor") {
+                if args.contains(&"--json") {
+                    format!("{}\n", format_doctor_json(&result))
+                } else {
+                    format!("{}\n", format_doctor(&result))
+                }
+            } else if args.contains(&"--json") {
                 format!("{}\n", to_json(&result))
             } else if args.contains(&"--explain") {
                 format!("{}\n", format_explanation(&result))
-            } else if args.contains(&"doctor") {
-                format!("{}\n", format_doctor(&result))
             } else if let Some(init_index) = args.iter().position(|arg| *arg == "init") {
                 format!("{}\n", format_init(args.get(init_index + 1).copied()))
             } else {

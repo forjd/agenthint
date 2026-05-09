@@ -46,6 +46,46 @@ export function formatDoctor(result: AgentHintResult): string {
   return lines.join("\n");
 }
 
+export function formatDoctorJson(result: AgentHintResult): string {
+  const setup = setupAdvice(result);
+
+  return JSON.stringify(
+    {
+      status: result.isAgent ? "agent runtime likely detected" : "agent runtime not detected",
+      agent: result.agent,
+      confidence: result.confidence,
+      signals: result.signals,
+      setup,
+      security: "use this as a UX hint only, not as a trust boundary",
+    },
+    null,
+    2,
+  );
+}
+
+function setupAdvice(result: AgentHintResult): { kind: string; message: string; hint?: string } {
+  if (result.signals.includes("env:AI_AGENT")) {
+    return {
+      kind: "explicit",
+      message: "AI_AGENT is set; this is the preferred explicit convention.",
+    };
+  }
+
+  if (result.isAgent && result.agent != null) {
+    return {
+      kind: "heuristic",
+      message: "Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.",
+      hint: setupHint(result.agent),
+    };
+  }
+
+  return {
+    kind: "missing",
+    message: "No agent signal was detected.",
+    hint: "Agents should set AI_AGENT=<agent-name> before invoking tools.",
+  };
+}
+
 function setupHint(agent: string): string {
   return AGENT_SETUP[agent] ?? `Set AI_AGENT=${agent} in the agent's tool-call environment.`;
 }

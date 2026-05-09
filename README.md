@@ -66,6 +66,8 @@ agenthint             # exit 0 if an agent is likely detected, otherwise 1
 agenthint --json      # print the structured detection result
 agenthint --explain   # print a short explanation
 agenthint doctor      # print detection details and setup advice
+agenthint doctor --json
+                    # print detection details and setup advice as JSON
 agenthint init codex  # print the recommended AI_AGENT value
 ```
 

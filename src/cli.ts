@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { formatDoctor } from "./doctor.js";
+import { formatDoctor, formatDoctorJson } from "./doctor.js";
 import { formatInit } from "./init.js";
 import { detectAgent } from "./index.js";
 
@@ -17,7 +17,7 @@ if (args.has("init")) {
   console.log(formatInit(rawArgs[rawArgs.indexOf("init") + 1]));
   process.exit(0);
 } else if (args.has("doctor")) {
-  console.log(formatDoctor(result));
+  console.log(args.has("--json") ? formatDoctorJson(result) : formatDoctor(result));
 } else if (args.has("--json")) {
   console.log(JSON.stringify(result, null, 2));
 } else if (args.has("--explain")) {
@@ -35,6 +35,8 @@ Usage:
   agenthint             Exit 0 if an agent is likely detected, otherwise 1
   agenthint init <name> Print the recommended AI_AGENT value
   agenthint doctor      Print detection details and setup advice
+  agenthint doctor --json
+                        Print detection details and setup advice as JSON
   agenthint --json      Print the structured detection result
   agenthint --explain   Print a short human-readable explanation
   agenthint --help      Show this help

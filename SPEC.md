@@ -105,6 +105,8 @@ The `agenthint` CLI should use:
 
 Subcommands that only print setup information, such as `agenthint init <agent>`, should exit `0` when invoked successfully.
 
+`agenthint --json` should return the raw detection result. `agenthint doctor --json` may return a richer diagnostic object that includes setup advice while preserving the same detection-based exit code as `agenthint doctor`.
+
 ## Security
 
 Agent detection must not be used as an authorization, sandboxing, policy, or trust boundary. Treat all results as hints for user experience only.

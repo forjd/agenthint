@@ -264,7 +264,7 @@ def _setup_advice(result: AgentHintResult, *, json_shape: bool = False) -> dict[
         message = "Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal."
         return {
             "kind": "heuristic",
-            "message": message if json_shape else f"setup: {message}",
+            "message": message if json_shape else f"setup: {message[:1].lower()}{message[1:]}",
             "hint": _setup_hint(result.agent),
         }
 

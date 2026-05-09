@@ -1,8 +1,24 @@
 import json
+import subprocess
+import sys
 import unittest
+from importlib.resources import files
 from pathlib import Path
 
 from agenthint import detect_agent, format_json
+
+
+def run_cli(args, env):
+    python_path = str(Path("python").resolve())
+    subprocess_env = {"PYTHONPATH": python_path, **env}
+
+    return subprocess.run(
+        [sys.executable, "-m", "agenthint.cli", *args],
+        env=subprocess_env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
 
 
 class AgentHintPythonTest(unittest.TestCase):
@@ -42,6 +58,34 @@ class AgentHintPythonTest(unittest.TestCase):
                 "signals": ["env:AI_AGENT"],
             },
         )
+
+    def test_cli_matches_shared_fixtures(self):
+        fixtures = json.loads(Path("fixtures/cli-cases.json").read_text())
+
+        for fixture in fixtures:
+            with self.subTest(fixture["name"]):
+                result = run_cli(fixture["args"], fixture["env"])
+
+                self.assertEqual(result.returncode, fixture["status"])
+
+                if fixture.get("stdout") is not None:
+                    self.assertEqual(result.stdout, fixture["stdout"])
+
+                for expected in fixture.get("stdoutContains", []):
+                    self.assertIn(expected, result.stdout)
+
+    def test_cli_rejects_invalid_usage(self):
+        result = run_cli(["bogus"], {})
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("invalid usage: bogus", result.stderr)
+
+    def test_package_includes_detection_rules(self):
+        rules = json.loads(files("agenthint").joinpath("detection-rules.json").read_text(encoding="utf8"))
+
+        self.assertIn("environmentRules", rules)
+        self.assertIn("parentProcessRules", rules)
 
 
 if __name__ == "__main__":

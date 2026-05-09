@@ -4,54 +4,41 @@
 [![Release](https://github.com/forjd/agenthint/actions/workflows/release.yml/badge.svg)](https://github.com/forjd/agenthint/actions/workflows/release.yml)
 [![npm](https://img.shields.io/npm/v/agenthint?logo=npm&color=cb3837)](https://www.npmjs.com/package/agenthint)
 [![crates.io](https://img.shields.io/crates/v/agenthint?logo=rust&color=dea584)](https://crates.io/crates/agenthint)
+[![PyPI](https://img.shields.io/pypi/v/agenthint?logo=python&color=3776ab)](https://pypi.org/project/agenthint/)
 [![License](https://img.shields.io/github/license/forjd/agenthint)](LICENSE)
 [![GitHub Repo stars](https://img.shields.io/github/stars/forjd/agenthint?style=social)](https://github.com/forjd/agenthint)
 
 Detect AI agent runtimes and adapt CLI output.
 
-`agenthint` is a small runtime detection spec, CLI, and library for developer tools that want to know when they are probably being run by an AI agent such as Codex, Claude Code, Cursor, Gemini CLI, or Aider.
+`agenthint` is a small detection spec, CLI, and multi-language library for developer tools that want to know when they are probably being run by an AI agent such as Codex, Claude Code, Cursor, Gemini CLI, Aider, or another automated coding environment.
 
-It is built for ergonomics, not security. Use it to choose better output defaults for agents; do not use it as a trust boundary.
+Use it to choose better defaults for agent-driven runs: structured output, quiet logs, no spinners, no pagers, no interactive prompts, and clearer diagnostics.
 
-## Why
-
-AI agents benefit from different CLI defaults than humans:
-
-- structured output instead of decorative output
-- no spinners, pagers, prompts, or browser launches
-- stable section markers and clear exit-code meanings
-- absolute paths and line-oriented diagnostics
-- concise logs that preserve useful debugging context
-
-`agenthint` gives CLIs and libraries a shared way to make that decision.
+> Detection is advisory. `agenthint` is for user experience decisions, not authentication, authorization, sandboxing, or policy enforcement.
 
 ## Quick Start
+
+Install the CLI:
 
 ```sh
 npm install -g agenthint
 # or
 cargo install agenthint
+# or
+python3 -m pip install agenthint
 ```
 
-```sh
-if agenthint; then
-  my-tool --json --no-progress
-else
-  my-tool
-fi
-```
-
-Use it inside another CLI or script to choose agent-friendly output:
+Use its exit code in scripts:
 
 ```sh
 if agenthint >/dev/null; then
-  exec my-cli --json --no-progress --no-pager "$@"
+  exec my-tool --json --no-progress --no-pager "$@"
 else
-  exec my-cli "$@"
+  exec my-tool "$@"
 fi
 ```
 
-For agents and wrappers, the preferred explicit convention is `AI_AGENT`:
+Prefer the explicit convention when you control the agent or wrapper:
 
 ```sh
 AI_AGENT=codex my-tool
@@ -59,19 +46,31 @@ AI_AGENT=claude-code my-tool
 AI_AGENT=my-custom-agent my-tool
 ```
 
+## Why
+
+Humans and agents often need different CLI behavior.
+
+| Humans often prefer | Agents often prefer |
+| --- | --- |
+| Colors, spinners, prompts | Stable, parseable output |
+| Pagers and browser launches | Non-interactive execution |
+| Decorative progress UI | Line-oriented diagnostics |
+| Friendly summaries | Explicit sections and exit codes |
+
+`agenthint` gives tools a shared, explainable way to switch modes without each project inventing its own agent detection logic.
+
 ## CLI
 
 ```sh
 agenthint             # exit 0 if an agent is likely detected, otherwise 1
 agenthint --json      # print the structured detection result
-agenthint --explain   # print a short explanation
+agenthint --explain   # print a short human-readable explanation
 agenthint doctor      # print detection details and setup advice
 agenthint doctor --json
-                      # print detection details and setup advice as JSON
 agenthint init codex  # print the recommended AI_AGENT value
 ```
 
-Example JSON output:
+Example JSON:
 
 ```json
 {
@@ -82,47 +81,19 @@ Example JSON output:
 }
 ```
 
-## Install
+Exit codes:
 
-Install from npm:
+| Code | Meaning |
+| --- | --- |
+| `0` | Agent runtime likely detected |
+| `1` | Agent runtime not detected |
+| `2` | Invalid usage or detection error |
 
-```sh
-npm install -g agenthint
-agenthint --json
-```
+Setup-only commands such as `agenthint init <agent>` exit `0`.
 
-Install from crates.io:
+## Libraries
 
-```sh
-cargo install agenthint
-agenthint --json
-```
-
-Install from PyPI:
-
-```sh
-python3 -m pip install agenthint
-agenthint --json
-```
-
-Install the latest native binary from GitHub Releases:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/forjd/agenthint/main/install.sh | sh
-```
-
-By default, the install script downloads the latest `agenthint-v*` GitHub Release asset for your platform. Set `AGENTHINT_VERSION` to install a specific release tag.
-
-Override the install directory or release version:
-
-```sh
-AGENTHINT_INSTALL_DIR=/usr/local/bin sh install.sh
-AGENTHINT_VERSION=agenthint-vX.Y.Z sh install.sh
-```
-
-Native binaries are built by GitHub Actions for release assets. The installer verifies `SHA256SUMS` when the selected release provides it.
-
-## TypeScript API
+### TypeScript
 
 ```ts
 import { detectAgent } from "agenthint";
@@ -134,9 +105,7 @@ if (result.isAgent) {
 }
 ```
 
-## Rust API
-
-The repository also contains a Rust implementation under `crates/agenthint`.
+### Rust
 
 ```rust
 use agenthint::detect_agent;
@@ -148,13 +117,7 @@ if result.is_agent {
 }
 ```
 
-Run the Rust CLI locally:
-
-```sh
-cargo run -q -p agenthint -- --json
-```
-
-## Python API
+### Python
 
 ```python
 from agenthint import detect_agent
@@ -166,124 +129,101 @@ if result.is_agent:
     pass
 ```
 
+## Install
+
+### npm
+
+```sh
+npm install -g agenthint
+agenthint --json
+```
+
+### crates.io
+
+```sh
+cargo install agenthint
+agenthint --json
+```
+
+### PyPI
+
+```sh
+python3 -m pip install agenthint
+agenthint --json
+```
+
+### Native binary
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/forjd/agenthint/main/install.sh | sh
+```
+
+The install script downloads the latest `agenthint-v*` GitHub Release asset for your platform and verifies `SHA256SUMS` when the selected release provides them.
+
+Override the install directory or version:
+
+```sh
+AGENTHINT_INSTALL_DIR=/usr/local/bin sh install.sh
+AGENTHINT_VERSION=agenthint-vX.Y.Z sh install.sh
+```
+
 ## Detection Model
 
-The result includes:
+Every detection result includes:
 
-- `isAgent`: whether an agent runtime is likely detected
-- `agent`: known or custom agent name
-- `confidence`: a number from `0` to `1`
-- `signals`: diagnostic signal names, never secret values
+| Field | Description |
+| --- | --- |
+| `isAgent` | Whether an agent runtime is likely detected |
+| `agent` | Known or custom agent name, when available |
+| `confidence` | A number from `0` to `1` |
+| `signals` | Diagnostic signal names, never secret values |
 
 Detection priority:
 
 1. `AGENTHINT_DISABLE`
 2. `AGENTHINT_FORCE`
-3. explicit `AI_AGENT`
-4. known environment signals
-5. documented filesystem signals
-6. low-confidence parent process signals
-7. low-confidence stdio hints
+3. Explicit `AI_AGENT`
+4. Known environment signals
+5. Documented filesystem signals
+6. Low-confidence parent process signals
+7. Low-confidence stdio hints
 
-## Supported Agents
-
-Current known agent names include:
-
-- Codex
-- Claude Code
-- Cowork
-- Cursor
-- Gemini CLI
-- Aider
-- Augment CLI
-- AMP
-- OpenCode
-- OpenClaw
-- GitHub Copilot
-- Replit
-- Devin
-- Google Antigravity
-- Pi
-- Kiro CLI
-- Windsurf
-- Cline
-- Roo Code
-- Kilo Code
-- Mistral Vibe
-- v0
+Known agents include Codex, Claude Code, Cursor, Gemini CLI, Aider, Augment CLI, AMP, OpenCode, OpenClaw, GitHub Copilot, Replit, Devin, Google Antigravity, Pi, Kiro CLI, Windsurf, Cline, Roo Code, Kilo Code, Mistral Vibe, v0, and Cowork.
 
 Custom agents are supported through any non-empty `AI_AGENT` value.
 
-See [docs/agents.md](docs/agents.md) for recommended `AI_AGENT` values.
+## Docs
 
-See [docs/integrations.md](docs/integrations.md) for Bash, Zsh, Fish, Node.js, Rust, and Python integration snippets.
-
-See [docs/signals.md](docs/signals.md) for the signal registry and confidence levels.
+- [Agent integration notes](docs/agents.md): recommended `AI_AGENT` values
+- [Integration snippets](docs/integrations.md): Bash, Zsh, Fish, Node.js, Rust, and Python examples
+- [Signal registry](docs/signals.md): known signals and confidence levels
+- [Detection spec](SPEC.md): the portable detection contract
 
 ## Principles
 
-- Detection is advisory and can be spoofed.
-- Prefer `AI_AGENT` when an agent can set an explicit hint.
-- Prefer explicit environment signals over brittle heuristics.
+- Prefer explicit `AI_AGENT` support over heuristics.
 - Return confidence, not false certainty.
 - Print signal names, not environment variable values.
-- Keep output quiet and machine-readable when requested.
-- Make the convention useful across languages and toolchains.
-
-## Packages
-
-Current:
-
-- `agenthint` JavaScript/TypeScript package
-- `agenthint` Rust crate and CLI implementation
-- `agenthint` Python package
-
-Planned:
-
-- standalone native binary releases
-
-The packages use the unscoped `agenthint` name across npm, crates.io, and PyPI. If the npm name becomes unavailable before first publish, the fallback package name is `@forjd/agenthint`.
-
-## CI and Releases
-
-GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, Python tests, npm package checks, Python package build checks, and `cargo publish --dry-run`.
-
-Releases use release-please with Conventional Commits. npm and PyPI publishing use trusted publishing via GitHub Actions OIDC, so no long-lived package tokens are required.
-
-See [docs/releases.md](docs/releases.md) for release details.
+- Keep filesystem probes documented and configurable.
+- Keep requested machine-readable output quiet and stable.
+- Treat detection as a hint, never as a security boundary.
 
 ## Development
 
-Use [mise](https://mise.jdx.dev/) for local toolchain versions:
-
 ```sh
 mise install
+mise exec -- npm run check
 ```
 
-Install dependencies and run checks:
+Useful scripts:
 
 ```sh
-npm install
-npm run check
-```
-
-Useful commands:
-
-```sh
+npm run build
 npm run format
 npm run lint
-npm test
-npm run python:build
-npm run python:test
-npm run generate:rules
+npm run test
+npm run check
 cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-## Security
-
-`agenthint` is not an authentication, authorization, sandboxing, or policy tool. Environment variables, parent process names, and filesystem markers can be spoofed. Treat all results as UX hints only.
-
-## License
-
-MIT © Forjd
+Contributions are welcome. Please keep detection results explainable, avoid printing secret-bearing environment values, and update the docs when adding or changing signals.

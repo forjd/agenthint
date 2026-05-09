@@ -111,7 +111,9 @@ Install the latest native binary from GitHub Releases:
 curl -fsSL https://raw.githubusercontent.com/forjd/agenthint/main/install.sh | sh
 ```
 
-Override the install directory or version:
+By default, the install script downloads the latest `agenthint-v*` GitHub Release asset for your platform. Set `AGENTHINT_VERSION` to install a specific release tag.
+
+Override the install directory or release version:
 
 ```sh
 AGENTHINT_INSTALL_DIR=/usr/local/bin sh install.sh
@@ -246,7 +248,7 @@ The packages use the unscoped `agenthint` name across npm, crates.io, and PyPI. 
 
 GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, Python tests, npm package checks, Python package build checks, and `cargo publish --dry-run`.
 
-Releases use release-please with Conventional Commits. npm and PyPI publishing use trusted publishing via GitHub Actions OIDC, so no long-lived package tokens are required. Before the first publish, configure trusted publishers for `forjd/agenthint` and `.github/workflows/release.yml`.
+Releases use release-please with Conventional Commits. npm and PyPI publishing use trusted publishing via GitHub Actions OIDC, so no long-lived package tokens are required.
 
 See [docs/releases.md](docs/releases.md) for release details.
 

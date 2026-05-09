@@ -37,7 +37,7 @@ jobs:
       - name: Check Python package build
         run: |
           python -m pip install --upgrade build
-          python -m build
+          npm run python:build
 
       - name: Check Rust crate package
         run: cargo publish -p agenthint --dry-run

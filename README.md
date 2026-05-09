@@ -193,6 +193,8 @@ Custom agents are supported through any non-empty `AI_AGENT` value.
 
 See [docs/agents.md](docs/agents.md) for recommended `AI_AGENT` values.
 
+See [docs/integrations.md](docs/integrations.md) for Bash, Zsh, Fish, Node.js, Rust, and Python integration snippets.
+
 ## Principles
 
 - Detection is advisory and can be spoofed.

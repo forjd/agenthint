@@ -95,4 +95,22 @@ describe("agenthint CLI", () => {
     assert.equal(result.status, 0);
     assert.match(result.stdout, /AI_AGENT=codex/);
   });
+
+  it("exits 2 for invalid usage", () => {
+    const unknown = spawnSync(process.execPath, [CLI_PATH, "bogus"], {
+      env: {},
+      encoding: "utf8",
+    });
+    const missingInitAgent = spawnSync(process.execPath, [CLI_PATH, "init"], {
+      env: {},
+      encoding: "utf8",
+    });
+
+    assert.equal(unknown.status, 2);
+    assert.equal(unknown.stdout, "");
+    assert.match(unknown.stderr, /invalid usage: bogus/);
+    assert.equal(missingInitAgent.status, 2);
+    assert.equal(missingInitAgent.stdout, "");
+    assert.match(missingInitAgent.stderr, /agenthint init <agent-name>/);
+  });
 });

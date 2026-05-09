@@ -4,23 +4,38 @@ import { formatInit } from "./init.js";
 import { detectAgent } from "./index.js";
 
 const rawArgs = process.argv.slice(2);
-const args = new Set(rawArgs);
 
-if (args.has("-h") || args.has("--help")) {
+if (rawArgs.length === 1 && (rawArgs[0] === "-h" || rawArgs[0] === "--help")) {
   printHelp();
   process.exit(0);
 }
 
+if (rawArgs[0] === "init") {
+  if (rawArgs.length !== 2 || rawArgs[1]?.trim() === "") {
+    printUsageError(formatInit(undefined));
+  }
+
+  console.log(formatInit(rawArgs[1]));
+  process.exit(0);
+}
+
+const validArgs =
+  rawArgs.length === 0 ||
+  (rawArgs.length === 1 && (rawArgs[0] === "--json" || rawArgs[0] === "--explain")) ||
+  (rawArgs.length === 1 && rawArgs[0] === "doctor") ||
+  (rawArgs.length === 2 && rawArgs[0] === "doctor" && rawArgs[1] === "--json");
+
+if (!validArgs) {
+  printUsageError(`invalid usage: ${rawArgs.join(" ")}`);
+}
+
 const result = detectAgent();
 
-if (args.has("init")) {
-  console.log(formatInit(rawArgs[rawArgs.indexOf("init") + 1]));
-  process.exit(0);
-} else if (args.has("doctor")) {
-  console.log(args.has("--json") ? formatDoctorJson(result) : formatDoctor(result));
-} else if (args.has("--json")) {
+if (rawArgs[0] === "doctor") {
+  console.log(rawArgs[1] === "--json" ? formatDoctorJson(result) : formatDoctor(result));
+} else if (rawArgs[0] === "--json") {
   console.log(JSON.stringify(result, null, 2));
-} else if (args.has("--explain")) {
+} else if (rawArgs[0] === "--explain") {
   console.log(formatExplanation(result));
 }
 
@@ -41,6 +56,11 @@ Usage:
   agenthint --explain   Print a short human-readable explanation
   agenthint --help      Show this help
 `);
+}
+
+function printUsageError(message: string): never {
+  console.error(message);
+  process.exit(2);
 }
 
 function formatExplanation(result: ReturnType<typeof detectAgent>): string {

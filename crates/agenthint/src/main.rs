@@ -6,27 +6,43 @@ fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
 
     if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-        print_help();
+        if args.len() == 1 {
+            print_help();
+            std::process::exit(0);
+        }
+
+        print_usage_error(&format!("invalid usage: {}", args.join(" ")));
+    }
+
+    if let Some(init_index) = args.iter().position(|arg| arg == "init") {
+        if init_index != 0 || args.len() != 2 || args[1].trim().is_empty() {
+            print_usage_error(&format_init(None));
+        }
+
+        println!("{}", format_init(args.get(1).map(String::as_str)));
         std::process::exit(0);
+    }
+
+    let valid_args = args.is_empty()
+        || (args.len() == 1 && (args[0] == "--json" || args[0] == "--explain"))
+        || (args.len() == 1 && args[0] == "doctor")
+        || (args.len() == 2 && args[0] == "doctor" && args[1] == "--json");
+
+    if !valid_args {
+        print_usage_error(&format!("invalid usage: {}", args.join(" ")));
     }
 
     let result = detect_agent();
 
-    if let Some(init_index) = args.iter().position(|arg| arg == "init") {
-        println!(
-            "{}",
-            format_init(args.get(init_index + 1).map(String::as_str))
-        );
-        std::process::exit(0);
-    } else if args.iter().any(|arg| arg == "doctor") {
-        if args.iter().any(|arg| arg == "--json") {
+    if args.first().is_some_and(|arg| arg == "doctor") {
+        if args.get(1).is_some_and(|arg| arg == "--json") {
             println!("{}", format_doctor_json(&result));
         } else {
             println!("{}", format_doctor(&result));
         }
-    } else if args.iter().any(|arg| arg == "--json") {
+    } else if args.first().is_some_and(|arg| arg == "--json") {
         println!("{}", to_json(&result));
-    } else if args.iter().any(|arg| arg == "--explain") {
+    } else if args.first().is_some_and(|arg| arg == "--explain") {
         println!("{}", format_explanation(&result));
     }
 
@@ -49,4 +65,9 @@ Usage:
   agenthint --explain   Print a short human-readable explanation
   agenthint --help      Show this help"
     );
+}
+
+fn print_usage_error(message: &str) -> ! {
+    eprintln!("{message}");
+    std::process::exit(2);
 }

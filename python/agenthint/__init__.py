@@ -91,6 +91,69 @@ def format_json(result: AgentHintResult) -> str:
     return json.dumps(result.to_dict(), indent=2)
 
 
+def format_doctor(result: AgentHintResult) -> str:
+    lines = [
+        "agenthint doctor",
+        "",
+        f"status: {'agent runtime likely detected' if result.is_agent else 'agent runtime not detected'}",
+        f"agent: {result.agent or 'none'}",
+        f"confidence: {result.confidence:.2f}",
+        f"signals: {', '.join(result.signals) if result.signals else 'none'}",
+        "",
+    ]
+
+    setup = _setup_advice(result)
+    if setup["kind"] == "explicit":
+        lines.append(setup["message"])
+    else:
+        lines.append(setup["message"])
+        lines.append(f"hint: {setup['hint']}")
+
+    lines.append("")
+    lines.append("security: use this as a UX hint only, not as a trust boundary.")
+
+    return "\n".join(lines)
+
+
+def format_doctor_json(result: AgentHintResult) -> str:
+    return json.dumps(
+        {
+            "status": "agent runtime likely detected" if result.is_agent else "agent runtime not detected",
+            "agent": result.agent,
+            "confidence": result.confidence,
+            "signals": result.signals,
+            "setup": _setup_advice(result, json_shape=True),
+            "security": "use this as a UX hint only, not as a trust boundary",
+        },
+        indent=2,
+    )
+
+
+def format_init(agent: str | None) -> str:
+    normalized = _normalize_agent_name(agent)
+
+    if normalized is None:
+        return "\n".join(
+            [
+                "agenthint init",
+                "",
+                "Usage:",
+                "  agenthint init <agent-name>",
+                "",
+                "Example:",
+                "  agenthint init codex",
+            ]
+        )
+
+    return "\n".join(
+        [
+            f"AI_AGENT={normalized}",
+            "",
+            "Use this value in the environment used for agent tool calls.",
+        ]
+    )
+
+
 def _from_ai_agent(env: Mapping[str, str]) -> AgentHintResult | None:
     value = env.get("AI_AGENT")
     if value is None or not value.strip():
@@ -192,8 +255,56 @@ def _normalize_process_name(value: str | None) -> str | None:
     return Path(value.strip()).name.removesuffix(".exe").lower()
 
 
+def _setup_advice(result: AgentHintResult, *, json_shape: bool = False) -> dict[str, str]:
+    if "env:AI_AGENT" in result.signals:
+        message = "AI_AGENT is set; this is the preferred explicit convention."
+        return {"kind": "explicit", "message": message} if json_shape else {"kind": "explicit", "message": f"setup: {message}"}
+
+    if result.is_agent and result.agent is not None:
+        message = "Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal."
+        return {
+            "kind": "heuristic",
+            "message": message if json_shape else f"setup: {message}",
+            "hint": _setup_hint(result.agent),
+        }
+
+    message = "No agent signal was detected."
+    return {
+        "kind": "missing",
+        "message": message if json_shape else f"setup: {message.lower()}",
+        "hint": "Agents should set AI_AGENT=<agent-name> before invoking tools.",
+    }
+
+
+def _setup_hint(agent: str) -> str:
+    hints = {
+        "codex": "Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls.",
+        "claude-code": "Set AI_AGENT=claude-code in a PreToolUse hook or shell wrapper.",
+        "cursor": "Set AI_AGENT=cursor in Cursor agent hooks or workspace shell configuration.",
+        "gemini": "Set AI_AGENT=gemini in Gemini CLI hook or shell configuration.",
+        "copilot": "Set AI_AGENT=github-copilot-cli for Copilot CLI or AI_AGENT=github-copilot for Copilot agents.",
+        "windsurf": "Set AI_AGENT=windsurf in .windsurfrules or the workspace shell environment.",
+        "cline": "Set AI_AGENT=cline in .clinerules or the Cline shell environment.",
+        "roo-code": "Set AI_AGENT=roo-code in Roo Code rules or shell environment.",
+        "kilocode": "Set AI_AGENT=kilocode in .kilocode rules or shell environment.",
+        "opencode": "Set AI_AGENT=opencode in an OpenCode plugin or shell environment.",
+        "openclaw": "Set AI_AGENT=openclaw in an OpenClaw plugin or shell environment.",
+        "antigravity": "Set AI_AGENT=antigravity in .agents rules or shell environment.",
+    }
+
+    return hints.get(agent, f"Set AI_AGENT={agent} in the agent's tool-call environment.")
+
+
 def _rules() -> dict[str, object]:
     return json.loads(files("agenthint").joinpath("detection-rules.json").read_text(encoding="utf8"))
 
 
-__all__ = ["AgentHintResult", "detect_agent", "format_explanation", "format_json"]
+__all__ = [
+    "AgentHintResult",
+    "detect_agent",
+    "format_doctor",
+    "format_doctor_json",
+    "format_explanation",
+    "format_init",
+    "format_json",
+]

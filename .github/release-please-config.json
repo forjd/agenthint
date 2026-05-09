@@ -4,7 +4,14 @@
     ".": {
       "release-type": "node",
       "package-name": "agenthint",
-      "include-component-in-tag": false
+      "include-component-in-tag": false,
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "pyproject.toml",
+          "jsonpath": "$.project.version"
+        }
+      ]
     },
     "crates/agenthint": {
       "release-type": "rust",

@@ -244,9 +244,9 @@ The packages use the unscoped `agenthint` name across npm, crates.io, and PyPI. 
 
 ## CI and Releases
 
-GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, Python tests, npm package checks, and `cargo publish --dry-run`.
+GitHub Actions runs formatting, linting, TypeScript tests, Rust tests, Python tests, npm package checks, Python package build checks, and `cargo publish --dry-run`.
 
-Releases use release-please with Conventional Commits. npm publishing is configured for trusted publishing via GitHub Actions OIDC, so no long-lived npm token is required. Before the first npm publish, configure the trusted publisher in npm package settings for `forjd/agenthint` and `.github/workflows/release.yml`.
+Releases use release-please with Conventional Commits. npm and PyPI publishing use trusted publishing via GitHub Actions OIDC, so no long-lived package tokens are required. Before the first publish, configure trusted publishers for `forjd/agenthint` and `.github/workflows/release.yml`.
 
 See [docs/releases.md](docs/releases.md) for release details.
 
@@ -271,6 +271,7 @@ Useful commands:
 npm run format
 npm run lint
 npm test
+npm run python:build
 npm run python:test
 npm run generate:rules
 cargo test --workspace

@@ -7,7 +7,7 @@ This repository uses release-please and Conventional Commits.
 1. Merge Conventional Commits to `main`.
 2. The release workflow opens or updates a release PR.
 3. Merge the release PR.
-4. The release workflow creates GitHub releases and publishes npm when a new package version is present.
+4. The release workflow creates GitHub releases and publishes npm, PyPI, and crates.io when a new package version is present.
 
 ## npm
 
@@ -21,6 +21,19 @@ Publishing uses npm trusted publishing from GitHub Actions, not a long-lived npm
 - workflow filename: `release.yml`
 
 If the unscoped npm name becomes unavailable before first publish, switch `package.json` and release-please config to `@forjd/agenthint`.
+
+## PyPI
+
+The Python package is planned as `agenthint`.
+
+Publishing uses PyPI trusted publishing from GitHub Actions, not a long-lived API token. Before the first automated publish, configure the pending trusted publisher on PyPI:
+
+- project: `agenthint`
+- owner: `forjd`
+- repository: `agenthint`
+- workflow filename: `release.yml`
+
+The release workflow builds the Python package with `python -m build`, skips publishing if the version already exists on PyPI, and publishes with `pypa/gh-action-pypi-publish`.
 
 ## crates.io
 

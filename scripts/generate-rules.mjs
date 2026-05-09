@@ -23,20 +23,50 @@ export const PARENT_PROCESS_RULES = ${JSON.stringify(rules.parentProcessRules, n
 `,
 );
 
-const rustStringArray = (values) => `&[${values.map((value) => `"${value}"`).join(", ")}]`;
+const rustString = (value) => {
+  let escaped = "";
+
+  for (const character of value) {
+    switch (character) {
+      case '"':
+        escaped += '\\"';
+        break;
+      case "\\":
+        escaped += "\\\\";
+        break;
+      case "\n":
+        escaped += "\\n";
+        break;
+      case "\r":
+        escaped += "\\r";
+        break;
+      case "\t":
+        escaped += "\\t";
+        break;
+      default: {
+        const codePoint = character.codePointAt(0);
+        escaped +=
+          codePoint != null && codePoint < 0x20 ? `\\u{${codePoint.toString(16)}}` : character;
+      }
+    }
+  }
+
+  return `"${escaped}"`;
+};
+const rustStringArray = (values) => `&[${values.map((value) => rustString(value)).join(", ")}]`;
 const rustEnvRules = rules.environmentRules
   .map((rule) => {
-    return `    EnvironmentRule { agent: "${rule.agent}", confidence: ${rule.confidence}, names: ${rustStringArray(rule.names)} },`;
+    return `    EnvironmentRule { agent: ${rustString(rule.agent)}, confidence: ${rule.confidence}, names: ${rustStringArray(rule.names)} },`;
   })
   .join("\n");
 const rustPrefixRules = rules.prefixRules
   .map((rule) => {
-    return `    PrefixRule { agent: "${rule.agent}", confidence: ${rule.confidence}, prefix: "${rule.prefix}" },`;
+    return `    PrefixRule { agent: ${rustString(rule.agent)}, confidence: ${rule.confidence}, prefix: ${rustString(rule.prefix)} },`;
   })
   .join("\n");
 const rustParentRules = rules.parentProcessRules
   .map((rule) => {
-    return `    ParentProcessRule { agent: "${rule.agent}", names: ${rustStringArray(rule.names)} },`;
+    return `    ParentProcessRule { agent: ${rustString(rule.agent)}, names: ${rustStringArray(rule.names)} },`;
   })
   .join("\n");
 

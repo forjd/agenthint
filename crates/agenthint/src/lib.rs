@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::path::Path;
 use std::process::Command;
 
@@ -437,10 +438,14 @@ fn present(env: &HashMap<String, String>, names: &[&str]) -> Vec<String> {
 }
 
 fn prefix_present(env: &HashMap<String, String>, prefix: &str) -> Vec<String> {
-    env.iter()
+    let mut signals = env
+        .iter()
         .filter(|(name, value)| name.starts_with(prefix) && !value.is_empty())
         .map(|(name, _)| format!("env:{name}"))
-        .collect()
+        .collect::<Vec<_>>();
+
+    signals.sort();
+    signals
 }
 
 fn tty_hints(options: &DetectAgentOptions) -> Vec<String> {
@@ -501,17 +506,25 @@ fn setup_hint(agent: &str) -> String {
 }
 
 fn escape_json(value: &str) -> String {
-    value
-        .chars()
-        .flat_map(|character| match character {
-            '"' => "\\\"".chars().collect::<Vec<_>>(),
-            '\\' => "\\\\".chars().collect::<Vec<_>>(),
-            '\n' => "\\n".chars().collect::<Vec<_>>(),
-            '\r' => "\\r".chars().collect::<Vec<_>>(),
-            '\t' => "\\t".chars().collect::<Vec<_>>(),
-            _ => vec![character],
-        })
-        .collect()
+    let mut escaped = String::new();
+
+    for character in value.chars() {
+        match character {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            '\u{08}' => escaped.push_str("\\b"),
+            '\u{0c}' => escaped.push_str("\\f"),
+            character if character <= '\u{1f}' => {
+                write!(&mut escaped, "\\u{:04x}", character as u32).unwrap();
+            }
+            _ => escaped.push(character),
+        }
+    }
+
+    escaped
 }
 
 fn format_confidence(confidence: f32) -> String {
@@ -788,6 +801,33 @@ mod tests {
         assert!(json.contains("\"agent\": \"copilot\""));
         assert!(json.contains("env:COPILOT_GITHUB_TOKEN"));
         assert!(!json.contains("secret"));
+    }
+
+    #[test]
+    fn json_escapes_control_characters() {
+        let result = AgentHintResult {
+            is_agent: true,
+            agent: Some("custom\u{0008}\u{0000}agent".to_string()),
+            confidence: 0.98,
+            signals: vec!["env:AI_AGENT".to_string()],
+        };
+        let parsed: Value = serde_json::from_str(&to_json(&result)).unwrap();
+
+        assert_eq!(parsed["agent"], "custom\u{0008}\u{0000}agent");
+    }
+
+    #[test]
+    fn prefix_signals_are_sorted() {
+        let result = detect(env(&[
+            ("AIDER_ZZZ", "1"),
+            ("AIDER_MODEL", "sonnet"),
+            ("AIDER_AAA", "1"),
+        ]));
+
+        assert_eq!(
+            result.signals,
+            vec!["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]
+        );
     }
 
     #[test]

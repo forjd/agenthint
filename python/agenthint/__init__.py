@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 from dataclasses import dataclass
+from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
 from typing import Callable, Mapping
@@ -60,7 +61,8 @@ def detect_agent(
     matches = _detection_matches(env)
     if matches:
         best = max(matches, key=lambda match: match["confidence"])
-        return AgentHintResult(True, best["agent"], best["confidence"], [signal for match in matches for signal in match["signals"]])
+        signals = list(dict.fromkeys(signal for match in matches for signal in match["signals"]))
+        return AgentHintResult(True, best["agent"], best["confidence"], signals)
 
     if check_filesystem and file_exists("/opt/.devin"):
         return AgentHintResult(True, "devin", 0.9, ["file:/opt/.devin"])
@@ -132,7 +134,7 @@ def format_doctor_json(result: AgentHintResult) -> str:
 def format_init(agent: str | None) -> str:
     normalized = _normalize_agent_name(agent)
 
-    if normalized is None:
+    if normalized is None or normalized.startswith("-"):
         return "\n".join(
             [
                 "agenthint init",
@@ -169,7 +171,12 @@ def _detection_matches(env: Mapping[str, str]) -> list[dict[str, object]]:
     for rule in rules["environmentRules"]:
         signals = _present(env, rule["names"])
         if signals:
-            agent = "cowork" if rule["agent"] == "claude-code" and _present(env, ["CLAUDE_CODE_IS_COWORK"]) else rule["agent"]
+            agent = rule["agent"]
+            if agent == "claude-code":
+                cowork_signals = _present(env, ["CLAUDE_CODE_IS_COWORK"])
+                if cowork_signals:
+                    agent = "cowork"
+                    signals = signals + cowork_signals
             matches.append({"agent": agent, "confidence": rule["confidence"], "signals": signals})
 
     for rule in rules["prefixRules"]:
@@ -224,7 +231,7 @@ def _present(env: Mapping[str, str], names: list[str]) -> list[str]:
 
 
 def _prefix_present(env: Mapping[str, str], prefix: str) -> list[str]:
-    return [f"env:{name}" for name, value in env.items() if name.startswith(prefix) and value]
+    return sorted(f"env:{name}" for name, value in env.items() if name.startswith(prefix) and value)
 
 
 def _is_truthy(value: str | None) -> bool:
@@ -295,6 +302,7 @@ def _setup_hint(agent: str) -> str:
     return hints.get(agent, f"Set AI_AGENT={agent} in the agent's tool-call environment.")
 
 
+@lru_cache(maxsize=1)
 def _rules() -> dict[str, object]:
     return json.loads(files("agenthint").joinpath("detection-rules.json").read_text(encoding="utf8"))
 

@@ -1,4 +1,4 @@
 [tools]
 node = "lts"
 rust = "stable"
-
+python = "3.12"

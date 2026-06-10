@@ -22,7 +22,7 @@ describe("agenthint CLI", () => {
       }
 
       for (const expected of fixture.stdoutContains ?? []) {
-        assert.match(result.stdout, new RegExp(expected), fixture.name);
+        assert.ok(result.stdout.includes(expected), `${fixture.name}: ${expected}`);
       }
     }
   });

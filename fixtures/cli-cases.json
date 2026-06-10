@@ -46,5 +46,11 @@
     "env": {},
     "status": 0,
     "stdout": "AI_AGENT=roo-code\n\nUse this value in the environment used for agent tool calls.\n"
+  },
+  {
+    "name": "init rejects option-like names",
+    "args": ["init", "--json"],
+    "env": {},
+    "status": 2
   }
 ]

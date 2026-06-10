@@ -5,17 +5,13 @@ use agenthint::{
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
 
-    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-        if args.len() == 1 {
-            print_help();
-            std::process::exit(0);
-        }
-
-        print_usage_error(&format!("invalid usage: {}", args.join(" ")));
+    if args.len() == 1 && (args[0] == "-h" || args[0] == "--help") {
+        print_help();
+        std::process::exit(0);
     }
 
-    if let Some(init_index) = args.iter().position(|arg| arg == "init") {
-        if init_index != 0 || args.len() != 2 || args[1].trim().is_empty() {
+    if args.first().is_some_and(|arg| arg == "init") {
+        if args.len() != 2 || args[1].trim().is_empty() || args[1].starts_with('-') {
             print_usage_error(&format_init(None));
         }
 

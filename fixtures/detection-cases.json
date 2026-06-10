@@ -53,7 +53,7 @@
     "isAgent": true,
     "agent": "cowork",
     "confidence": 0.9,
-    "signals": ["env:CLAUDE_CODE"]
+    "signals": ["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
   },
   {
     "name": "aider prefix",
@@ -62,6 +62,30 @@
     "agent": "aider",
     "confidence": 0.86,
     "signals": ["env:AIDER_MODEL"]
+  },
+  {
+    "name": "prefix signals are sorted",
+    "env": { "AIDER_ZZZ": "1", "AIDER_MODEL": "sonnet", "AIDER_AAA": "1" },
+    "isAgent": true,
+    "agent": "aider",
+    "confidence": 0.86,
+    "signals": ["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]
+  },
+  {
+    "name": "exact and prefix matches are deduplicated",
+    "env": { "CURSOR_AGENT": "1", "CURSOR_TRACE_ID": "trace" },
+    "isAgent": true,
+    "agent": "cursor",
+    "confidence": 0.92,
+    "signals": ["env:CURSOR_AGENT", "env:CURSOR_TRACE_ID"]
+  },
+  {
+    "name": "equal confidence tie prefers the earlier rule",
+    "env": { "GEMINI_CLI": "1", "CURSOR_AGENT": "1" },
+    "isAgent": true,
+    "agent": "cursor",
+    "confidence": 0.92,
+    "signals": ["env:CURSOR_AGENT", "env:GEMINI_CLI"]
   },
   {
     "name": "stronger heuristic wins over earlier weaker signal",

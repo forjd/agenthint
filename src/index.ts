@@ -1,17 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
-import {
-  ENVIRONMENT_RULES,
-  type GeneratedKnownAgent,
-  KNOWN_AGENTS,
-  PARENT_PROCESS_RULES,
-  PREFIX_RULES,
-} from "./generated-rules.js";
+import { type AgentName, type KnownAgent, normalizeAgentName } from "./agent-names.js";
+import { ENVIRONMENT_RULES, PARENT_PROCESS_RULES, PREFIX_RULES } from "./generated-rules.js";
 
-export type KnownAgent = GeneratedKnownAgent;
-
-export type AgentName = KnownAgent | (string & {});
+export type { AgentName, KnownAgent } from "./agent-names.js";
 
 export type AgentHintResult = {
   isAgent: boolean;
@@ -47,7 +40,15 @@ const DETECTION_RULES: DetectionRule[] = [
             present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code"
         : rule.agent,
     confidence: rule.confidence,
-    match: (env: NodeJS.ProcessEnv) => present(env, [...rule.names]),
+    match: (env: NodeJS.ProcessEnv) => {
+      const signals = present(env, [...rule.names]);
+
+      if (rule.agent === "claude-code" && signals.length > 0) {
+        signals.push(...present(env, ["CLAUDE_CODE_IS_COWORK"]));
+      }
+
+      return signals;
+    },
   })),
   ...PREFIX_RULES.map((rule) => ({
     agent: rule.agent,
@@ -96,7 +97,7 @@ export function detectAgent(options: DetectAgentOptions = {}): AgentHintResult {
       isAgent: true,
       agent: typeof best.agent === "function" ? best.agent(env) : best.agent,
       confidence: best.confidence,
-      signals: matches.flatMap((match) => match.signals),
+      signals: [...new Set(matches.flatMap((match) => match.signals))],
     };
   }
 
@@ -238,49 +239,12 @@ function present(env: NodeJS.ProcessEnv, names: string[]): string[] {
 function prefixPresent(env: NodeJS.ProcessEnv, prefix: string): string[] {
   return Object.keys(env)
     .filter((name) => name.startsWith(prefix) && env[name] != null && env[name] !== "")
-    .map((name) => `env:${name}`);
+    .map((name) => `env:${name}`)
+    .sort();
 }
 
 function isTruthy(value: string | undefined): boolean {
   return value != null && TRUE_VALUES.has(value.toLowerCase());
-}
-
-function normalizeAgentName(value: string | undefined): AgentName | null {
-  const normalized = value?.trim();
-
-  if (normalized == null || normalized === "") {
-    return null;
-  }
-
-  if (normalized === "github-copilot" || normalized === "github-copilot-cli") {
-    return "copilot";
-  }
-
-  if (normalized.startsWith("claude-code")) {
-    return "claude-code";
-  }
-
-  if (normalized === "roo" || normalized === "roo-code") {
-    return "roo-code";
-  }
-
-  if (normalized === "kilo-code" || normalized === "kilocode") {
-    return "kilocode";
-  }
-
-  if (normalized === "mistral-vibe" || normalized === "vibe") {
-    return "mistral-vibe";
-  }
-
-  if (isKnownAgent(normalized)) {
-    return normalized;
-  }
-
-  return normalized;
-}
-
-function isKnownAgent(value: string): value is KnownAgent {
-  return KNOWN_AGENTS.includes(value as KnownAgent);
 }
 
 function ttyHints(options: DetectAgentOptions): string[] {

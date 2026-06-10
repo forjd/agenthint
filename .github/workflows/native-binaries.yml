@@ -31,6 +31,11 @@ jobs:
             binary: agenthint
             asset: agenthint-linux-x64
             target: ""
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            binary: agenthint
+            asset: agenthint-linux-arm64
+            target: ""
           - name: macos-arm64
             os: macos-latest
             binary: agenthint

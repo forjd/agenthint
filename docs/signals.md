@@ -45,7 +45,9 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 | `env:KILOCODE_AGENT` | `kilocode` | `0.82` | heuristic |
 | `env:OPENCLAW_AGENT` | `openclaw` | `0.82` | heuristic |
 
-`CLAUDE_CODE_IS_COWORK` is only a classifier. It selects `cowork` when another Claude signal is present; it is not an agent signal by itself.
+`CLAUDE_CODE_IS_COWORK` is only a classifier. It selects `cowork` when another Claude signal is present; it is not an agent signal by itself. When it selects `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` so the classification stays explainable.
+
+`REPL_ID` is present in every Replit workspace, including human-driven sessions, which is why it reports a low `0.65` confidence. Exit-code consumers that want to avoid false positives can read `confidence` from `agenthint --json` and apply their own threshold.
 
 ## Filesystem Heuristics
 
@@ -68,6 +70,8 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 | `process:parent:amp` | `amp` | `0.55` | heuristic | yes |
 
 Parent process signals report normalized executable names only, not full paths.
+
+Parent process detection reads `/proc` or `ps`, so it is effectively unavailable on Windows unless a parent process name is supplied explicitly through library options.
 
 ## Stdio Hints
 

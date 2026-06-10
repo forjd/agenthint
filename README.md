@@ -184,7 +184,7 @@ Every detection result includes:
 Detection priority:
 
 1. `AGENTHINT_DISABLE`
-2. `AGENTHINT_FORCE`
+2. `AGENTHINT_FORCE` (optionally named via `AGENTHINT_AGENT`)
 3. Explicit `AI_AGENT`
 4. Known environment signals
 5. Documented filesystem signals
@@ -192,6 +192,8 @@ Detection priority:
 7. Low-confidence stdio hints
 
 Known agents include Codex, Claude Code, Cursor, Gemini CLI, Aider, Augment CLI, AMP, OpenCode, OpenClaw, GitHub Copilot, Replit, Devin, Google Antigravity, Pi, Kiro CLI, Windsurf, Cline, Roo Code, Kilo Code, Mistral Vibe, v0, and Cowork.
+
+Some signals are weak. For example `REPL_ID` is present in every Replit workspace, including human-driven sessions, so it reports a low confidence. Exit-code consumers that want to avoid false positives can read `confidence` from `agenthint --json` and apply their own threshold.
 
 Custom agents are supported through any non-empty `AI_AGENT` value.
 

@@ -29,6 +29,7 @@ detect_asset() {
     Linux)
       case "$arch" in
         x86_64 | amd64) echo "agenthint-linux-x64" ;;
+        aarch64 | arm64) echo "agenthint-linux-arm64" ;;
         *) echo "agenthint install: unsupported Linux architecture: $arch" >&2; exit 1 ;;
       esac
       ;;

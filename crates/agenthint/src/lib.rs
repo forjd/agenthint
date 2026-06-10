@@ -78,18 +78,25 @@ pub fn detect_agent_with_options(options: DetectAgentOptions) -> AgentHintResult
     }
 
     let matches = detection_matches(&options.env);
-    if let Some(best) = matches
-        .iter()
-        .max_by(|left, right| left.confidence.total_cmp(&right.confidence))
-    {
+    if let Some(best) = matches.iter().reduce(|best, current| {
+        if current.confidence > best.confidence {
+            current
+        } else {
+            best
+        }
+    }) {
+        let mut signals: Vec<String> = Vec::new();
+        for signal in matches.iter().flat_map(|agent_match| &agent_match.signals) {
+            if !signals.contains(signal) {
+                signals.push(signal.clone());
+            }
+        }
+
         return AgentHintResult {
             is_agent: true,
             agent: Some(best.agent.clone()),
             confidence: best.confidence,
-            signals: matches
-                .iter()
-                .flat_map(|agent_match| agent_match.signals.clone())
-                .collect(),
+            signals,
         };
     }
 
@@ -219,7 +226,9 @@ fn doctor_setup_json(result: &AgentHintResult) -> String {
 }
 
 pub fn format_init(agent: Option<&str>) -> String {
-    let Some(agent) = normalize_agent_name(agent.map(|value| value.to_string()).as_ref()) else {
+    let Some(agent) = normalize_agent_name(agent.map(|value| value.to_string()).as_ref())
+        .filter(|agent| !agent.starts_with('-'))
+    else {
         return [
             "agenthint init",
             "",
@@ -293,15 +302,25 @@ fn detection_matches(env: &HashMap<String, String>) -> Vec<AgentMatch> {
     let mut matches = Vec::new();
 
     for rule in generated_rules::ENVIRONMENT_RULES {
-        let agent = if rule.agent == "claude-code"
-            && !present(env, &["CLAUDE_CODE_IS_COWORK"]).is_empty()
-        {
-            "cowork"
-        } else {
-            rule.agent
-        };
+        let mut signals = present(env, rule.names);
+        if signals.is_empty() {
+            continue;
+        }
 
-        push_present(&mut matches, env, agent, rule.confidence, rule.names);
+        let mut agent = rule.agent;
+        if rule.agent == "claude-code" {
+            let cowork_signals = present(env, &["CLAUDE_CODE_IS_COWORK"]);
+            if !cowork_signals.is_empty() {
+                agent = "cowork";
+                signals.extend(cowork_signals);
+            }
+        }
+
+        matches.push(AgentMatch {
+            agent: agent.to_string(),
+            confidence: rule.confidence,
+            signals,
+        });
     }
 
     for rule in generated_rules::PREFIX_RULES {
@@ -332,22 +351,13 @@ fn from_parent_process(options: &DetectAgentOptions) -> Option<AgentHintResult> 
 }
 
 fn parent_process_name() -> Option<String> {
-    let ppid_output = Command::new("ps")
-        .args(["-o", "ppid=", "-p", &std::process::id().to_string()])
-        .output()
-        .ok()?;
+    let ppid = parent_pid()?;
 
-    if !ppid_output.status.success() {
+    if ppid == 0 {
         return None;
     }
 
-    let ppid = String::from_utf8(ppid_output.stdout).ok()?;
-    let ppid = ppid.trim();
-
-    if ppid.is_empty() {
-        return None;
-    }
-
+    let ppid = ppid.to_string();
     let proc_path = format!("/proc/{ppid}/comm");
 
     if let Ok(value) = std::fs::read_to_string(proc_path) {
@@ -358,7 +368,7 @@ fn parent_process_name() -> Option<String> {
     }
 
     let output = Command::new("ps")
-        .args(["-o", "comm=", "-p", ppid])
+        .args(["-o", "comm=", "-p", ppid.as_str()])
         .output()
         .ok()?;
 
@@ -374,6 +384,16 @@ fn parent_process_name() -> Option<String> {
     } else {
         Some(trimmed.to_string())
     }
+}
+
+#[cfg(unix)]
+fn parent_pid() -> Option<u32> {
+    Some(std::os::unix::process::parent_id())
+}
+
+#[cfg(not(unix))]
+fn parent_pid() -> Option<u32> {
+    None
 }
 
 fn normalize_process_name(value: &str) -> Option<String> {
@@ -393,23 +413,6 @@ fn agent_from_process_name(name: &str) -> Option<&'static str> {
         .iter()
         .find(|rule| rule.names.contains(&name))
         .map(|rule| rule.agent)
-}
-
-fn push_present(
-    matches: &mut Vec<AgentMatch>,
-    env: &HashMap<String, String>,
-    agent: &str,
-    confidence: f32,
-    names: &[&str],
-) {
-    let signals = present(env, names);
-    if !signals.is_empty() {
-        matches.push(AgentMatch {
-            agent: agent.to_string(),
-            confidence,
-            signals,
-        });
-    }
 }
 
 fn push_prefix(
@@ -755,7 +758,19 @@ mod tests {
         let not_cowork = detect(env(&[("CLAUDE_CODE_IS_COWORK", "1")]));
 
         assert_eq!(cowork.agent.as_deref(), Some("cowork"));
+        assert_eq!(
+            cowork.signals,
+            vec!["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
+        );
         assert!(!not_cowork.is_agent);
+    }
+
+    #[test]
+    fn equal_confidence_ties_prefer_the_earlier_rule() {
+        let result = detect(env(&[("GEMINI_CLI", "1"), ("CURSOR_AGENT", "1")]));
+
+        assert_eq!(result.agent.as_deref(), Some("cursor"));
+        assert_eq!(result.signals, vec!["env:CURSOR_AGENT", "env:GEMINI_CLI"]);
     }
 
     #[test]
@@ -835,5 +850,6 @@ mod tests {
         assert!(format_init(Some("codex")).contains("AI_AGENT=codex"));
         assert!(format_init(Some("roo")).contains("AI_AGENT=roo-code"));
         assert!(format_init(None).contains("agenthint init <agent-name>"));
+        assert!(format_init(Some("--help")).contains("agenthint init <agent-name>"));
     }
 }

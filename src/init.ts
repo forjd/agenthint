@@ -1,12 +1,4 @@
-import type { AgentName } from "./index.js";
-
-const INIT_ALIASES: Record<string, AgentName> = {
-  "github-copilot": "copilot",
-  "github-copilot-cli": "copilot",
-  roo: "roo-code",
-  "kilo-code": "kilocode",
-  vibe: "mistral-vibe",
-};
+import { type AgentName, normalizeAgentName } from "./agent-names.js";
 
 export function formatInit(agent: string | undefined): string {
   const normalized = normalizeInitAgent(agent);
@@ -31,15 +23,11 @@ export function formatInit(agent: string | undefined): string {
 }
 
 function normalizeInitAgent(agent: string | undefined): AgentName | null {
-  const value = agent?.trim();
+  const normalized = normalizeAgentName(agent);
 
-  if (value == null || value === "") {
+  if (normalized == null || normalized.startsWith("-")) {
     return null;
   }
 
-  if (value.startsWith("claude-code")) {
-    return "claude-code";
-  }
-
-  return INIT_ALIASES[value] ?? value;
+  return normalized;
 }

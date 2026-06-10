@@ -11,11 +11,13 @@ if (rawArgs.length === 1 && (rawArgs[0] === "-h" || rawArgs[0] === "--help")) {
 }
 
 if (rawArgs[0] === "init") {
-  if (rawArgs.length !== 2 || rawArgs[1]?.trim() === "") {
+  const agent = rawArgs[1];
+
+  if (rawArgs.length !== 2 || agent == null || agent.trim() === "" || agent.startsWith("-")) {
     printUsageError(formatInit(undefined));
   }
 
-  console.log(formatInit(rawArgs[1]));
+  console.log(formatInit(agent));
   process.exit(0);
 }
 

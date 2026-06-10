@@ -28,6 +28,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Check Cargo.lock is current
+        run: cargo metadata --locked --format-version 1 > /dev/null
+
       - name: Run checks
         run: npm run check
 

@@ -39,6 +39,18 @@ AI_AGENT=my-custom-agent my-tool
 
 `AI_AGENT` should be checked before heuristic signals. Empty and whitespace-only values should be ignored.
 
+## Override Conventions
+
+`AGENTHINT_DISABLE` forces a no-agent result and `AGENTHINT_FORCE` forces an agent result; both take precedence over `AI_AGENT` and heuristics. When `AGENTHINT_FORCE` is set, `AGENTHINT_AGENT` optionally names the forced agent; otherwise the agent is `unknown`. Truthy values are `1`, `true`, `yes`, and `on`.
+
+## Signal Ordering and Ties
+
+To keep results portable across implementations:
+
+- Heuristic matches report every matching signal, deduplicated, in rule-registry order.
+- Signal names matched by an environment prefix rule are sorted lexicographically.
+- When multiple heuristic rules match with equal confidence, the earliest rule in the registry wins.
+
 ## Parent Process Signals
 
 Implementations may inspect the direct parent process name as a low-confidence heuristic. Parent process checks should be configurable because process names can be unavailable, ambiguous, platform-specific, or controlled by wrappers.
@@ -80,11 +92,12 @@ Initial candidates:
 - `KILOCODE_AGENT`
 - `OPENCLAW_AGENT`
 - `AGENTHINT_FORCE`
+- `AGENTHINT_AGENT`
 - `AGENTHINT_DISABLE`
 
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
 
-`CLAUDE_CODE_IS_COWORK` is a classifier only. It may select `cowork` when another Claude signal is present, but should not be treated as an agent signal by itself.
+`CLAUDE_CODE_IS_COWORK` is a classifier only. It may select `cowork` when another Claude signal is present, but should not be treated as an agent signal by itself. When it does select `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` to keep the classification explainable.
 
 Known agent names without stable heuristic signals should still be supported through `AI_AGENT`.
 Current explicit-only known names:

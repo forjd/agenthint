@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/forjd/agenthint/compare/v0.4.1...v0.4.2) (2026-06-11)
+
+
+### Bug Fixes
+
+* align detection and init behavior across implementations ([87fd407](https://github.com/forjd/agenthint/commit/87fd40787b04a28dbd6751ffd7c7f6caedacd2e1))
+* sync Cargo.lock with crate version 0.4.1 ([8004890](https://github.com/forjd/agenthint/commit/80048907b65c5226d8dbea17d1a7e262e7323764))
+
 ## [0.4.1](https://github.com/forjd/agenthint/compare/v0.4.0...v0.4.1) (2026-05-09)
 
 

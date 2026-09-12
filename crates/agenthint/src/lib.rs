@@ -3,6 +3,7 @@ use std::fmt::Write;
 use std::path::Path;
 use std::process::Command;
 
+mod generated_messages;
 mod generated_rules;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,6 +54,26 @@ impl Default for DetectAgentOptions {
 /// trims this exact set instead.
 pub fn trim_whitespace(value: &str) -> &str {
     value.trim_matches([' ', '\t', '\n', '\x0B', '\x0C', '\r'])
+}
+
+/// Replaces Unicode control characters (general category Cc) so env-derived
+/// values cannot inject terminal escape sequences into human-readable output.
+pub fn sanitize_for_display(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_control() {
+                '\u{FFFD}'
+            } else {
+                character
+            }
+        })
+        .collect()
+}
+
+/// The shared help text used by the CLI.
+pub fn format_help() -> &'static str {
+    generated_messages::HELP
 }
 
 pub fn detect_agent() -> AgentHintResult {
@@ -136,19 +157,27 @@ pub fn detect_agent_with_options(options: DetectAgentOptions) -> AgentHintResult
 
 pub fn format_explanation(result: &AgentHintResult) -> String {
     let status = if result.is_agent {
-        "agent runtime likely detected"
+        generated_messages::EXPLAIN_DETECTED
     } else {
-        "agent runtime not detected"
+        generated_messages::EXPLAIN_NOT_DETECTED
     };
     let agent = result
         .agent
         .as_ref()
-        .map(|agent| format!("\nagent: {agent}"))
+        .map(|agent| format!("\nagent: {}", sanitize_for_display(agent)))
         .unwrap_or_default();
     let signals = if result.signals.is_empty() {
         "\nsignals: none".to_string()
     } else {
-        format!("\nsignals: {}", result.signals.join(", "))
+        format!(
+            "\nsignals: {}",
+            result
+                .signals
+                .iter()
+                .map(|signal| sanitize_for_display(signal))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     };
 
     format!(
@@ -159,38 +188,54 @@ pub fn format_explanation(result: &AgentHintResult) -> String {
 
 pub fn format_doctor(result: &AgentHintResult) -> String {
     let status = if result.is_agent {
-        "agent runtime likely detected"
+        generated_messages::DOCTOR_DETECTED
     } else {
-        "agent runtime not detected"
+        generated_messages::DOCTOR_NOT_DETECTED
     };
-    let agent = result.agent.as_deref().unwrap_or("none");
+    let agent = result
+        .agent
+        .as_deref()
+        .map(sanitize_for_display)
+        .unwrap_or_else(|| "none".to_string());
     let signals = if result.signals.is_empty() {
         "none".to_string()
     } else {
-        result.signals.join(", ")
+        result
+            .signals
+            .iter()
+            .map(|signal| sanitize_for_display(signal))
+            .collect::<Vec<_>>()
+            .join(", ")
     };
+
     let setup = if result.signals.iter().any(|signal| signal == "env:AI_AGENT") {
-        "setup: AI_AGENT is set; this is the preferred explicit convention.".to_string()
+        generated_messages::DOCTOR_EXPLICIT_TEXT.to_string()
     } else if result.is_agent {
         format!(
-            "setup: detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\nhint: {}",
-            setup_hint(agent)
+            "{}\nhint: {}",
+            generated_messages::DOCTOR_HEURISTIC_TEXT,
+            setup_hint(result.agent.as_deref().unwrap_or("unknown"))
         )
     } else {
-        "setup: no agent signal was detected.\nhint: agents should set AI_AGENT=<agent-name> before invoking tools.".to_string()
+        format!(
+            "{}\n{}",
+            generated_messages::DOCTOR_MISSING_TEXT,
+            generated_messages::DOCTOR_MISSING_HINT_TEXT
+        )
     };
 
     format!(
-        "agenthint doctor\n\nstatus: {status}\nagent: {agent}\nconfidence: {:.2}\nsignals: {signals}\n\n{setup}\n\nsecurity: use this as a UX hint only, not as a trust boundary.",
-        result.confidence
+        "agenthint doctor\n\nstatus: {status}\nagent: {agent}\nconfidence: {:.2}\nsignals: {signals}\n\n{setup}\n\n{}",
+        result.confidence,
+        generated_messages::DOCTOR_SECURITY_TEXT
     )
 }
 
 pub fn format_doctor_json(result: &AgentHintResult) -> String {
     let status = if result.is_agent {
-        "agent runtime likely detected"
+        generated_messages::DOCTOR_DETECTED
     } else {
-        "agent runtime not detected"
+        generated_messages::DOCTOR_NOT_DETECTED
     };
     let agent = result
         .agent
@@ -206,55 +251,49 @@ pub fn format_doctor_json(result: &AgentHintResult) -> String {
     let setup = doctor_setup_json(result);
 
     format!(
-        "{{\n  \"status\": \"{status}\",\n  \"agent\": {agent},\n  \"confidence\": {},\n  \"signals\": [{}],\n  \"setup\": {setup},\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}}",
+        "{{\n  \"status\": \"{status}\",\n  \"agent\": {agent},\n  \"confidence\": {},\n  \"signals\": [{}],\n  \"setup\": {setup},\n  \"security\": \"{}\"\n}}",
         format_confidence(result.confidence),
         if signals.is_empty() {
             String::new()
         } else {
             format!("\n    {signals}\n  ")
-        }
+        },
+        escape_json(generated_messages::DOCTOR_SECURITY_JSON)
     )
 }
 
 fn doctor_setup_json(result: &AgentHintResult) -> String {
     if result.signals.iter().any(|signal| signal == "env:AI_AGENT") {
-        return "{\n    \"kind\": \"explicit\",\n    \"message\": \"AI_AGENT is set; this is the preferred explicit convention.\"\n  }".to_string();
+        return format!(
+            "{{\n    \"kind\": \"explicit\",\n    \"message\": \"{}\"\n  }}",
+            escape_json(generated_messages::DOCTOR_EXPLICIT_MESSAGE)
+        );
     }
 
     if result.is_agent {
         let agent = result.agent.as_deref().unwrap_or("unknown");
         return format!(
-            "{{\n    \"kind\": \"heuristic\",\n    \"message\": \"Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\",\n    \"hint\": \"{}\"\n  }}",
+            "{{\n    \"kind\": \"heuristic\",\n    \"message\": \"{}\",\n    \"hint\": \"{}\"\n  }}",
+            escape_json(generated_messages::DOCTOR_HEURISTIC_MESSAGE),
             escape_json(&setup_hint(agent))
         );
     }
 
-    "{\n    \"kind\": \"missing\",\n    \"message\": \"No agent signal was detected.\",\n    \"hint\": \"Agents should set AI_AGENT=<agent-name> before invoking tools.\"\n  }"
-        .to_string()
+    format!(
+        "{{\n    \"kind\": \"missing\",\n    \"message\": \"{}\",\n    \"hint\": \"{}\"\n  }}",
+        escape_json(generated_messages::DOCTOR_MISSING_MESSAGE),
+        escape_json(generated_messages::DOCTOR_MISSING_HINT)
+    )
 }
 
 pub fn format_init(agent: Option<&str>) -> String {
     let Some(agent) = normalize_agent_name(agent.map(|value| value.to_string()).as_ref())
         .filter(|agent| !agent.starts_with('-'))
     else {
-        return [
-            "agenthint init",
-            "",
-            "Usage:",
-            "  agenthint init <agent-name>",
-            "",
-            "Example:",
-            "  agenthint init codex",
-        ]
-        .join("\n");
+        return generated_messages::INIT_USAGE.to_string();
     };
 
-    [
-        format!("AI_AGENT={agent}"),
-        String::new(),
-        "Use this value in the environment used for agent tool calls.".to_string(),
-    ]
-    .join("\n")
+    generated_messages::INIT_OUTPUT.replace("{agent}", &sanitize_for_display(&agent))
 }
 
 pub fn to_json(result: &AgentHintResult) -> String {
@@ -493,26 +532,14 @@ fn normalize_agent_name(value: Option<&String>) -> Option<String> {
 }
 
 fn setup_hint(agent: &str) -> String {
-    match agent {
-        "codex" => {
-            "Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls."
-        }
-        "claude-code" => "Set AI_AGENT=claude-code in a PreToolUse hook or shell wrapper.",
-        "cursor" => "Set AI_AGENT=cursor in Cursor agent hooks or workspace shell configuration.",
-        "gemini" => "Set AI_AGENT=gemini in Gemini CLI hook or shell configuration.",
-        "copilot" => {
-            "Set AI_AGENT=github-copilot-cli for Copilot CLI or AI_AGENT=github-copilot for Copilot agents."
-        }
-        "windsurf" => "Set AI_AGENT=windsurf in .windsurfrules or the workspace shell environment.",
-        "cline" => "Set AI_AGENT=cline in .clinerules or the Cline shell environment.",
-        "roo-code" => "Set AI_AGENT=roo-code in Roo Code rules or shell environment.",
-        "kilocode" => "Set AI_AGENT=kilocode in .kilocode rules or shell environment.",
-        "opencode" => "Set AI_AGENT=opencode in an OpenCode plugin or shell environment.",
-        "openclaw" => "Set AI_AGENT=openclaw in an OpenClaw plugin or shell environment.",
-        "antigravity" => "Set AI_AGENT=antigravity in .agents rules or shell environment.",
-        _ => return format!("Set AI_AGENT={agent} in the agent's tool-call environment."),
+    if let Some((_, hint)) = generated_messages::AGENT_HINTS
+        .iter()
+        .find(|(name, _)| *name == agent)
+    {
+        return sanitize_for_display(hint);
     }
-    .to_string()
+
+    sanitize_for_display(&generated_messages::DOCTOR_FALLBACK_HINT.replace("{agent}", agent))
 }
 
 fn escape_json(value: &str) -> String {
@@ -636,8 +663,8 @@ mod tests {
                 .map(|arg| arg.as_str().unwrap())
                 .collect::<Vec<_>>();
 
-            // Help text lives in the binary; tests/cli.rs covers it.
-            if args.contains(&"--help") {
+            // The --help and --version outputs live in the binary; tests/cli.rs covers them.
+            if args.contains(&"--help") || args.contains(&"--version") {
                 continue;
             }
 

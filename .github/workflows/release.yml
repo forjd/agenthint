@@ -105,6 +105,8 @@ jobs:
       - name: Publish Python package with trusted publishing
         if: ${{ (github.event_name != 'push' || steps.release.outputs.releases_created == 'true') && steps.pypi.outputs.publish == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist-python
 
       - name: Check crates.io published version
         if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}

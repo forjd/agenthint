@@ -27,6 +27,17 @@ describe("agenthint CLI", () => {
     }
   });
 
+  it("prints the package version", () => {
+    const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+    const result = spawnSync(process.execPath, [CLI_PATH, "--version"], {
+      env: {},
+      encoding: "utf8",
+    });
+
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout, `agenthint ${packageJson.version}\n`);
+  });
+
   it("exits 1 and prints JSON when no agent is detected", () => {
     const result = spawnSync(process.execPath, [CLI_PATH, "--json"], {
       env: {},

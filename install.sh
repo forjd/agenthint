@@ -108,6 +108,8 @@ need uname
 need mktemp
 need chmod
 need mkdir
+need awk
+need tr
 
 asset="$(detect_asset)"
 tmp_dir="$(mktemp -d)"

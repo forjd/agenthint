@@ -44,3 +44,50 @@ jobs:
 
       - name: Check Rust crate package
         run: cargo publish -p agenthint --dry-run
+
+  portability:
+    name: Test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install toolchains
+        uses: jdx/mise-action@v4
+        with:
+          cache: true
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run JavaScript and Rust tests
+        run: |
+          npm run test
+          npm run rust:test
+
+  python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.13"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run Python tests
+        run: PYTHONPATH=python python -m unittest discover -s test -p 'python_test.py'

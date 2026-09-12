@@ -31,4 +31,4 @@ agenthint = "agenthint.cli:main"
 package-dir = {"" = "python"}
 
 [tool.setuptools.package-data]
-agenthint = ["detection-rules.json"]
+agenthint = ["detection-rules.json", "messages.json"]

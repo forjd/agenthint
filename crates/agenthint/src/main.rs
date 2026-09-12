@@ -1,13 +1,18 @@
 use agenthint::{
-    detect_agent, format_doctor, format_doctor_json, format_explanation, format_init, to_json,
-    trim_whitespace,
+    detect_agent, format_doctor, format_doctor_json, format_explanation, format_help, format_init,
+    sanitize_for_display, to_json, trim_whitespace,
 };
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
 
     if args.len() == 1 && (args[0] == "-h" || args[0] == "--help") {
-        print_help();
+        println!("{}", format_help());
+        std::process::exit(0);
+    }
+
+    if args.len() == 1 && args[0] == "--version" {
+        println!("agenthint {}", env!("CARGO_PKG_VERSION"));
         std::process::exit(0);
     }
 
@@ -46,25 +51,7 @@ fn main() {
     std::process::exit(if result.is_agent { 0 } else { 1 });
 }
 
-fn print_help() {
-    println!(
-        "agenthint
-
-Detect whether the current process is probably running under an AI agent.
-
-Usage:
-  agenthint             Exit 0 if an agent is likely detected, otherwise 1
-  agenthint init <name> Print the recommended AI_AGENT value
-  agenthint doctor      Print detection details and setup advice
-  agenthint doctor --json
-                        Print detection details and setup advice as JSON
-  agenthint --json      Print the structured detection result
-  agenthint --explain   Print a short human-readable explanation
-  agenthint --help      Show this help"
-    );
-}
-
 fn print_usage_error(message: &str) -> ! {
-    eprintln!("{message}");
+    eprintln!("{}", sanitize_for_display(message));
     std::process::exit(2);
 }

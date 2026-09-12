@@ -7,6 +7,13 @@
     "stdout": "{\n  \"isAgent\": false,\n  \"agent\": null,\n  \"confidence\": 0,\n  \"signals\": []\n}\n"
   },
   {
+    "name": "json keeps non-ASCII agent names",
+    "args": ["--json"],
+    "env": { "AI_AGENT": "\ufeff" },
+    "status": 0,
+    "stdout": "{\n  \"isAgent\": true,\n  \"agent\": \"\ufeff\",\n  \"confidence\": 0.98,\n  \"signals\": [\n    \"env:AI_AGENT\"\n  ]\n}\n"
+  },
+  {
     "name": "explain forced codex",
     "args": ["--explain"],
     "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "codex" },
@@ -14,11 +21,25 @@
     "stdout": "agent runtime likely detected\nagent: codex\nconfidence: 1.00\nsignals: env:AGENTHINT_FORCE\n"
   },
   {
+    "name": "explain sanitizes control characters",
+    "args": ["--explain"],
+    "env": { "AI_AGENT": "evil\u0007ansi" },
+    "status": 0,
+    "stdout": "agent runtime likely detected\nagent: evil\uFFFDansi\nconfidence: 0.98\nsignals: env:AI_AGENT\n"
+  },
+  {
     "name": "help",
     "args": ["--help"],
     "env": {},
     "status": 0,
-    "stdout": "agenthint\n\nDetect whether the current process is probably running under an AI agent.\n\nUsage:\n  agenthint             Exit 0 if an agent is likely detected, otherwise 1\n  agenthint init <name> Print the recommended AI_AGENT value\n  agenthint doctor      Print detection details and setup advice\n  agenthint doctor --json\n                        Print detection details and setup advice as JSON\n  agenthint --json      Print the structured detection result\n  agenthint --explain   Print a short human-readable explanation\n  agenthint --help      Show this help\n"
+    "stdout": "agenthint\n\nDetect whether the current process is probably running under an AI agent.\n\nUsage:\n  agenthint             Exit 0 if an agent is likely detected, otherwise 1\n  agenthint init <name> Print the recommended AI_AGENT value\n  agenthint doctor      Print detection details and setup advice\n  agenthint doctor --json\n                        Print detection details and setup advice as JSON\n  agenthint --json      Print the structured detection result\n  agenthint --explain   Print a short human-readable explanation\n  agenthint --version   Show the version\n  agenthint --help      Show this help\n"
+  },
+  {
+    "name": "version",
+    "args": ["--version"],
+    "env": {},
+    "status": 0,
+    "stdoutContains": ["agenthint "]
   },
   {
     "name": "doctor no agent",
@@ -41,11 +62,25 @@
     ]
   },
   {
+    "name": "doctor explicit json",
+    "args": ["doctor", "--json"],
+    "env": { "AI_AGENT": "codex" },
+    "status": 0,
+    "stdout": "{\n  \"status\": \"agent runtime likely detected\",\n  \"agent\": \"codex\",\n  \"confidence\": 0.98,\n  \"signals\": [\n    \"env:AI_AGENT\"\n  ],\n  \"setup\": {\n    \"kind\": \"explicit\",\n    \"message\": \"AI_AGENT is set; this is the preferred explicit convention.\"\n  },\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}\n"
+  },
+  {
     "name": "doctor heuristic codex json",
     "args": ["doctor", "--json"],
     "env": { "CODEX_SANDBOX": "1" },
     "status": 0,
     "stdout": "{\n  \"status\": \"agent runtime likely detected\",\n  \"agent\": \"codex\",\n  \"confidence\": 0.92,\n  \"signals\": [\n    \"env:CODEX_SANDBOX\"\n  ],\n  \"setup\": {\n    \"kind\": \"heuristic\",\n    \"message\": \"Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\",\n    \"hint\": \"Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls.\"\n  },\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}\n"
+  },
+  {
+    "name": "doctor missing json",
+    "args": ["doctor", "--json"],
+    "env": { "AGENTHINT_DISABLE": "1" },
+    "status": 1,
+    "stdout": "{\n  \"status\": \"agent runtime not detected\",\n  \"agent\": null,\n  \"confidence\": 1,\n  \"signals\": [\n    \"env:AGENTHINT_DISABLE\"\n  ],\n  \"setup\": {\n    \"kind\": \"missing\",\n    \"message\": \"No agent signal was detected.\",\n    \"hint\": \"Agents should set AI_AGENT=<agent-name> before invoking tools.\"\n  },\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}\n"
   },
   {
     "name": "init codex",

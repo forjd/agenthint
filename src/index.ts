@@ -233,12 +233,14 @@ function agentFromProcessName(name: string): KnownAgent | null {
 }
 
 function present(env: NodeJS.ProcessEnv, names: string[]): string[] {
-  return names.filter((name) => env[name] != null && env[name] !== "").map((name) => `env:${name}`);
+  return names
+    .filter((name) => env[name] != null && env[name].trim() !== "")
+    .map((name) => `env:${name}`);
 }
 
 function prefixPresent(env: NodeJS.ProcessEnv, prefix: string): string[] {
   return Object.keys(env)
-    .filter((name) => name.startsWith(prefix) && env[name] != null && env[name] !== "")
+    .filter((name) => name.startsWith(prefix) && env[name] != null && env[name].trim() !== "")
     .map((name) => `env:${name}`)
     .sort();
 }
@@ -248,6 +250,9 @@ function isTruthy(value: string | undefined): boolean {
 }
 
 function ttyHints(options: DetectAgentOptions): string[] {
+  // Stdio hints are opt-in library signals only. The CLI does not auto-report
+  // piped output as an agent signal to avoid false positives in scripts.
+  // Node reports undefined (not false) for isTTY when piped, so no signal here.
   const stdoutIsTTY = options.stdoutIsTTY ?? process.stdout.isTTY;
   const stdinIsTTY = options.stdinIsTTY ?? process.stdin.isTTY;
   const signals: string[] = [];

@@ -105,6 +105,10 @@ describe("agenthint CLI", () => {
       env: {},
       encoding: "utf8",
     });
+    const nonLeadingInit = spawnSync(process.execPath, [CLI_PATH, "foo", "init", "bar"], {
+      env: {},
+      encoding: "utf8",
+    });
 
     assert.equal(unknown.status, 2);
     assert.equal(unknown.stdout, "");
@@ -112,5 +116,7 @@ describe("agenthint CLI", () => {
     assert.equal(missingInitAgent.status, 2);
     assert.equal(missingInitAgent.stdout, "");
     assert.match(missingInitAgent.stderr, /agenthint init <agent-name>/);
+    assert.equal(nonLeadingInit.status, 2);
+    assert.match(nonLeadingInit.stderr, /invalid usage: foo init bar/);
   });
 });

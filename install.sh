@@ -74,8 +74,9 @@ sha256_file() {
 }
 
 is_truthy() {
-  case "$1" in
-    1 | true | TRUE | yes | YES | on | ON) return 0 ;;
+  lowered="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$lowered" in
+    1 | true | yes | on) return 0 ;;
     *) return 1 ;;
   esac
 }

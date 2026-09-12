@@ -435,7 +435,10 @@ fn push_prefix(
 fn present(env: &HashMap<String, String>, names: &[&str]) -> Vec<String> {
     names
         .iter()
-        .filter(|name| env.get(**name).is_some_and(|value| !value.is_empty()))
+        .filter(|name| {
+            env.get(**name)
+                .is_some_and(|value| !value.trim().is_empty())
+        })
         .map(|name| format!("env:{name}"))
         .collect()
 }
@@ -443,7 +446,7 @@ fn present(env: &HashMap<String, String>, names: &[&str]) -> Vec<String> {
 fn prefix_present(env: &HashMap<String, String>, prefix: &str) -> Vec<String> {
     let mut signals = env
         .iter()
-        .filter(|(name, value)| name.starts_with(prefix) && !value.is_empty())
+        .filter(|(name, value)| name.starts_with(prefix) && !value.trim().is_empty())
         .map(|(name, _)| format!("env:{name}"))
         .collect::<Vec<_>>();
 
@@ -452,6 +455,8 @@ fn prefix_present(env: &HashMap<String, String>, prefix: &str) -> Vec<String> {
 }
 
 fn tty_hints(options: &DetectAgentOptions) -> Vec<String> {
+    // Stdio hints are opt-in library signals only. The CLI does not auto-report
+    // piped output as an agent signal to avoid false positives in scripts.
     let mut signals = Vec::new();
 
     if options.stdout_is_tty == Some(false) {
@@ -843,6 +848,58 @@ mod tests {
             result.signals,
             vec!["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]
         );
+    }
+
+    #[test]
+    fn prefers_earliest_rule_on_confidence_ties() {
+        let result = detect(env(&[("CURSOR_AGENT", "1"), ("GEMINI_CLI", "true")]));
+
+        assert_eq!(result.agent.as_deref(), Some("cursor"));
+        assert_eq!(result.confidence, 0.92);
+    }
+
+    #[test]
+    fn ignores_whitespace_only_heuristic_values() {
+        let result = detect(env(&[("CODEX_HOME", "   ")]));
+
+        assert!(!result.is_agent);
+        assert_eq!(result.agent, None);
+    }
+
+    #[test]
+    fn includes_cowork_classifier_signal() {
+        let result = detect(env(&[("CLAUDE_CODE", "1"), ("CLAUDE_CODE_IS_COWORK", "1")]));
+
+        assert_eq!(result.agent.as_deref(), Some("cowork"));
+        assert_eq!(
+            result.signals,
+            vec!["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
+        );
+    }
+
+    #[test]
+    fn normalizes_parent_exe_case_insensitively() {
+        let result = detect_agent_with_options(DetectAgentOptions {
+            env: HashMap::new(),
+            check_filesystem: false,
+            parent_process_name: Some("/usr/local/bin/Codex.EXE".to_string()),
+            ..DetectAgentOptions::default()
+        });
+
+        assert_eq!(result.agent.as_deref(), Some("codex"));
+        assert_eq!(result.signals, vec!["process:parent:codex"]);
+    }
+
+    #[test]
+    fn truthy_overrides_are_case_insensitive() {
+        let forced = detect(env(&[("AGENTHINT_FORCE", "True")]));
+        let disabled = detect(env(&[
+            ("AGENTHINT_DISABLE", "YES"),
+            ("CODEX_HOME", "/tmp/codex"),
+        ]));
+
+        assert!(forced.is_agent);
+        assert!(!disabled.is_agent);
     }
 
     #[test]

@@ -71,6 +71,8 @@ def detect_agent(
     if parent_result is not None:
         return parent_result
 
+    # Stdio hints are opt-in library signals only. The CLI does not auto-report
+    # piped output as an agent signal to avoid false positives in scripts.
     tty_signals: list[str] = []
     if stdout_is_tty is False:
         tty_signals.append("stdio:stdout-not-tty")
@@ -227,11 +229,11 @@ def _parent_process_name() -> str | None:
 
 
 def _present(env: Mapping[str, str], names: list[str]) -> list[str]:
-    return [f"env:{name}" for name in names if env.get(name)]
+    return [f"env:{name}" for name in names if env.get(name) and env.get(name).strip()]
 
 
 def _prefix_present(env: Mapping[str, str], prefix: str) -> list[str]:
-    return sorted(f"env:{name}" for name, value in env.items() if name.startswith(prefix) and value)
+    return sorted(f"env:{name}" for name, value in env.items() if name.startswith(prefix) and value and value.strip())
 
 
 def _is_truthy(value: str | None) -> bool:
@@ -259,7 +261,7 @@ def _normalize_agent_name(value: str | None) -> str | None:
 def _normalize_process_name(value: str | None) -> str | None:
     if value is None or not value.strip():
         return None
-    return Path(value.strip()).name.removesuffix(".exe").lower()
+    return Path(value.strip()).name.lower().removesuffix(".exe")
 
 
 def _setup_advice(result: AgentHintResult, *, json_shape: bool = False) -> dict[str, str]:

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { type AgentName, type KnownAgent, normalizeAgentName } from "./agent-names.js";
 import { ENVIRONMENT_RULES, PARENT_PROCESS_RULES, PREFIX_RULES } from "./generated-rules.js";
+import { trimWhitespace } from "./whitespace.js";
 
 export type { AgentName, KnownAgent } from "./agent-names.js";
 
@@ -130,15 +131,15 @@ export function detectAgent(options: DetectAgentOptions = {}): AgentHintResult {
 }
 
 function fromAiAgentEnvVar(env: NodeJS.ProcessEnv): AgentHintResult | null {
-  const value = env.AI_AGENT?.trim();
+  const agent = normalizeAgentName(env.AI_AGENT);
 
-  if (value == null || value === "") {
+  if (agent == null) {
     return null;
   }
 
   return {
     isAgent: true,
-    agent: normalizeAgentName(value) ?? value,
+    agent,
     confidence: 0.98,
     signals: ["env:AI_AGENT"],
   };
@@ -198,23 +199,25 @@ function parentProcessName(): string | null {
   }
 
   try {
-    return readFileSync(`/proc/${ppid}/comm`, "utf8").trim();
+    return trimWhitespace(readFileSync(`/proc/${ppid}/comm`, "utf8"));
   } catch {
     // Fall through to ps for platforms without /proc, including macOS.
   }
 
   try {
-    return execFileSync("ps", ["-o", "comm=", "-p", String(ppid)], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
+    return trimWhitespace(
+      execFileSync("ps", ["-o", "comm=", "-p", String(ppid)], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }),
+    );
   } catch {
     return null;
   }
 }
 
 function normalizeProcessName(value: string | null | undefined): string | null {
-  const trimmed = value?.trim();
+  const trimmed = value == null ? null : trimWhitespace(value);
 
   if (trimmed == null || trimmed === "") {
     return null;
@@ -233,16 +236,18 @@ function agentFromProcessName(name: string): KnownAgent | null {
 }
 
 function present(env: NodeJS.ProcessEnv, names: string[]): string[] {
-  return names
-    .filter((name) => env[name] != null && env[name].trim() !== "")
-    .map((name) => `env:${name}`);
+  return names.filter((name) => hasValue(env[name])).map((name) => `env:${name}`);
 }
 
 function prefixPresent(env: NodeJS.ProcessEnv, prefix: string): string[] {
   return Object.keys(env)
-    .filter((name) => name.startsWith(prefix) && env[name] != null && env[name].trim() !== "")
+    .filter((name) => name.startsWith(prefix) && hasValue(env[name]))
     .map((name) => `env:${name}`)
     .sort();
+}
+
+function hasValue(value: string | undefined): boolean {
+  return value != null && trimWhitespace(value) !== "";
 }
 
 function isTruthy(value: string | undefined): boolean {
@@ -250,18 +255,13 @@ function isTruthy(value: string | undefined): boolean {
 }
 
 function ttyHints(options: DetectAgentOptions): string[] {
-  // Stdio hints are opt-in library signals only. The CLI does not auto-report
-  // piped output as an agent signal to avoid false positives in scripts.
-  // Node reports undefined (not false) for isTTY when piped, so no signal here.
-  const stdoutIsTTY = options.stdoutIsTTY ?? process.stdout.isTTY;
-  const stdinIsTTY = options.stdinIsTTY ?? process.stdin.isTTY;
   const signals: string[] = [];
 
-  if (stdoutIsTTY === false) {
+  if (options.stdoutIsTTY === false) {
     signals.push("stdio:stdout-not-tty");
   }
 
-  if (stdinIsTTY === false) {
+  if (options.stdinIsTTY === false) {
     signals.push("stdio:stdin-not-tty");
   }
 

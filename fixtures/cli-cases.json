@@ -14,6 +14,20 @@
     "stdout": "agent runtime likely detected\nagent: codex\nconfidence: 1.00\nsignals: env:AGENTHINT_FORCE\n"
   },
   {
+    "name": "help",
+    "args": ["--help"],
+    "env": {},
+    "status": 0,
+    "stdout": "agenthint\n\nDetect whether the current process is probably running under an AI agent.\n\nUsage:\n  agenthint             Exit 0 if an agent is likely detected, otherwise 1\n  agenthint init <name> Print the recommended AI_AGENT value\n  agenthint doctor      Print detection details and setup advice\n  agenthint doctor --json\n                        Print detection details and setup advice as JSON\n  agenthint --json      Print the structured detection result\n  agenthint --explain   Print a short human-readable explanation\n  agenthint --help      Show this help\n"
+  },
+  {
+    "name": "doctor no agent",
+    "args": ["doctor"],
+    "env": { "AGENTHINT_DISABLE": "1" },
+    "status": 1,
+    "stdout": "agenthint doctor\n\nstatus: agent runtime not detected\nagent: none\nconfidence: 1.00\nsignals: env:AGENTHINT_DISABLE\n\nsetup: no agent signal was detected.\nhint: agents should set AI_AGENT=<agent-name> before invoking tools.\n\nsecurity: use this as a UX hint only, not as a trust boundary.\n"
+  },
+  {
     "name": "doctor heuristic codex",
     "args": ["doctor"],
     "env": { "CODEX_SANDBOX": "1" },
@@ -50,6 +64,12 @@
   {
     "name": "init rejects option-like names",
     "args": ["init", "--json"],
+    "env": {},
+    "status": 2
+  },
+  {
+    "name": "init rejects ASCII whitespace-only names",
+    "args": ["init", "\u000b\t "],
     "env": {},
     "status": 2
   }

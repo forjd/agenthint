@@ -2,6 +2,7 @@
 import { formatDoctor, formatDoctorJson } from "./doctor.js";
 import { formatInit } from "./init.js";
 import { detectAgent } from "./index.js";
+import { trimWhitespace } from "./whitespace.js";
 
 const rawArgs = process.argv.slice(2);
 
@@ -13,7 +14,12 @@ if (rawArgs.length === 1 && (rawArgs[0] === "-h" || rawArgs[0] === "--help")) {
 if (rawArgs[0] === "init") {
   const agent = rawArgs[1];
 
-  if (rawArgs.length !== 2 || agent == null || agent.trim() === "" || agent.startsWith("-")) {
+  if (
+    rawArgs.length !== 2 ||
+    agent == null ||
+    trimWhitespace(agent) === "" ||
+    agent.startsWith("-")
+  ) {
     printUsageError(formatInit(undefined));
   }
 
@@ -56,8 +62,7 @@ Usage:
                         Print detection details and setup advice as JSON
   agenthint --json      Print the structured detection result
   agenthint --explain   Print a short human-readable explanation
-  agenthint --help      Show this help
-`);
+  agenthint --help      Show this help`);
 }
 
 function printUsageError(message: string): never {

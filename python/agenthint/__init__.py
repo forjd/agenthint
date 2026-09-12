@@ -13,6 +13,9 @@ AgentName = str
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
 PARENT_CONFIDENCE = 0.55
+# Native trim functions disagree on non-ASCII whitespace, so every
+# implementation trims this exact ASCII set instead (see SPEC.md).
+WHITESPACE = " \t\n\v\f\r"
 
 
 @dataclass(frozen=True)
@@ -71,8 +74,6 @@ def detect_agent(
     if parent_result is not None:
         return parent_result
 
-    # Stdio hints are opt-in library signals only. The CLI does not auto-report
-    # piped output as an agent signal to avoid false positives in scripts.
     tty_signals: list[str] = []
     if stdout_is_tty is False:
         tty_signals.append("stdio:stdout-not-tty")
@@ -158,12 +159,16 @@ def format_init(agent: str | None) -> str:
     )
 
 
+def trim_whitespace(value: str) -> str:
+    return value.strip(WHITESPACE)
+
+
 def _from_ai_agent(env: Mapping[str, str]) -> AgentHintResult | None:
-    value = env.get("AI_AGENT")
-    if value is None or not value.strip():
+    agent = _normalize_agent_name(env.get("AI_AGENT"))
+    if agent is None:
         return None
 
-    return AgentHintResult(True, _normalize_agent_name(value) or value.strip(), 0.98, ["env:AI_AGENT"])
+    return AgentHintResult(True, agent, 0.98, ["env:AI_AGENT"])
 
 
 def _detection_matches(env: Mapping[str, str]) -> list[dict[str, object]]:
@@ -211,29 +216,35 @@ def _parent_process_name() -> str | None:
 
     proc_path = Path(f"/proc/{ppid}/comm")
     try:
-        value = proc_path.read_text(encoding="utf8").strip()
+        value = trim_whitespace(proc_path.read_text(encoding="utf8"))
         if value:
             return value
     except OSError:
         pass
 
     try:
-        return subprocess.run(
-            ["ps", "-o", "comm=", "-p", str(ppid)],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
+        return trim_whitespace(
+            subprocess.run(
+                ["ps", "-o", "comm=", "-p", str(ppid)],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
     except (OSError, subprocess.CalledProcessError):
         return None
 
 
 def _present(env: Mapping[str, str], names: list[str]) -> list[str]:
-    return [f"env:{name}" for name in names if env.get(name) and env.get(name).strip()]
+    return [f"env:{name}" for name in names if _has_value(env.get(name))]
 
 
 def _prefix_present(env: Mapping[str, str], prefix: str) -> list[str]:
-    return sorted(f"env:{name}" for name, value in env.items() if name.startswith(prefix) and value and value.strip())
+    return sorted(f"env:{name}" for name, value in env.items() if name.startswith(prefix) and _has_value(value))
+
+
+def _has_value(value: str | None) -> bool:
+    return value is not None and trim_whitespace(value) != ""
 
 
 def _is_truthy(value: str | None) -> bool:
@@ -241,10 +252,10 @@ def _is_truthy(value: str | None) -> bool:
 
 
 def _normalize_agent_name(value: str | None) -> str | None:
-    if value is None or not value.strip():
+    normalized = None if value is None else trim_whitespace(value)
+    if not normalized:
         return None
 
-    normalized = value.strip()
     if normalized in {"github-copilot", "github-copilot-cli"}:
         return "copilot"
     if normalized.startswith("claude-code"):
@@ -259,9 +270,10 @@ def _normalize_agent_name(value: str | None) -> str | None:
 
 
 def _normalize_process_name(value: str | None) -> str | None:
-    if value is None or not value.strip():
+    trimmed = None if value is None else trim_whitespace(value)
+    if not trimmed:
         return None
-    return Path(value.strip()).name.lower().removesuffix(".exe")
+    return Path(trimmed).name.lower().removesuffix(".exe")
 
 
 def _setup_advice(result: AgentHintResult, *, json_shape: bool = False) -> dict[str, str]:
@@ -278,10 +290,11 @@ def _setup_advice(result: AgentHintResult, *, json_shape: bool = False) -> dict[
         }
 
     message = "No agent signal was detected."
+    hint = "Agents should set AI_AGENT=<agent-name> before invoking tools."
     return {
         "kind": "missing",
         "message": message if json_shape else f"setup: {message.lower()}",
-        "hint": "Agents should set AI_AGENT=<agent-name> before invoking tools.",
+        "hint": hint if json_shape else f"{hint[:1].lower()}{hint[1:]}",
     }
 
 

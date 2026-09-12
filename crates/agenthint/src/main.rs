@@ -1,5 +1,6 @@
 use agenthint::{
     detect_agent, format_doctor, format_doctor_json, format_explanation, format_init, to_json,
+    trim_whitespace,
 };
 
 fn main() {
@@ -11,7 +12,7 @@ fn main() {
     }
 
     if args.first().is_some_and(|arg| arg == "init") {
-        if args.len() != 2 || args[1].trim().is_empty() || args[1].starts_with('-') {
+        if args.len() != 2 || trim_whitespace(&args[1]).is_empty() || args[1].starts_with('-') {
             print_usage_error(&format_init(None));
         }
 

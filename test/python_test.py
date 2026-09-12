@@ -91,6 +91,16 @@ class AgentHintPythonTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, f"agenthint {match.group(1)}\n")
 
+    @unittest.skipIf(sys.platform == "win32", "invalid UTF-8 env values are a POSIX concept")
+    def test_cli_survives_invalid_utf8_env(self):
+        result = run_cli(["--json"], {"AI_AGENT": "a\udcffb"})
+        explain = run_cli(["--explain"], {"AI_AGENT": "a\udcffb"})
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stdout)["agent"], "a\ufffdb")
+        self.assertEqual(explain.returncode, 0)
+        self.assertIn("agent: a\ufffdb", explain.stdout)
+
     def test_cli_rejects_invalid_usage(self):
         result = run_cli(["bogus"], {})
 

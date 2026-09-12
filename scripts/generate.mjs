@@ -1,5 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const biomeBin = require.resolve("@biomejs/biome/bin/biome");
 
 const rules = JSON.parse(readFileSync("fixtures/detection-rules.json", "utf8"));
 const messages = JSON.parse(readFileSync("fixtures/messages.json", "utf8"));
@@ -158,9 +162,9 @@ ${rustAgentHints}
 );
 
 execFileSync(
-  process.platform === "win32" ? "npx.cmd" : "npx",
+  process.execPath,
   [
-    "biome",
+    biomeBin,
     "format",
     "--write",
     "src/generated-rules.ts",

@@ -83,6 +83,27 @@
     "stdout": "{\n  \"status\": \"agent runtime not detected\",\n  \"agent\": null,\n  \"confidence\": 1,\n  \"signals\": [\n    \"env:AGENTHINT_DISABLE\"\n  ],\n  \"setup\": {\n    \"kind\": \"missing\",\n    \"message\": \"No agent signal was detected.\",\n    \"hint\": \"Agents should set AI_AGENT=<agent-name> before invoking tools.\"\n  },\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}\n"
   },
   {
+    "name": "doctor text keeps dollar patterns in hints",
+    "args": ["doctor"],
+    "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "a$&b" },
+    "status": 0,
+    "stdout": "agenthint doctor\n\nstatus: agent runtime likely detected\nagent: a$&b\nconfidence: 1.00\nsignals: env:AGENTHINT_FORCE\n\nsetup: detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\nhint: Set AI_AGENT=a$&b in the agent's tool-call environment.\n\nsecurity: use this as a UX hint only, not as a trust boundary.\n"
+  },
+  {
+    "name": "doctor text sanitizes control characters",
+    "args": ["doctor"],
+    "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "a\u0007b" },
+    "status": 0,
+    "stdout": "agenthint doctor\n\nstatus: agent runtime likely detected\nagent: a\uFFFDb\nconfidence: 1.00\nsignals: env:AGENTHINT_FORCE\n\nsetup: detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\nhint: Set AI_AGENT=a\uFFFDb in the agent's tool-call environment.\n\nsecurity: use this as a UX hint only, not as a trust boundary.\n"
+  },
+  {
+    "name": "doctor json escapes control characters without sanitizing",
+    "args": ["doctor", "--json"],
+    "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "a\u0007b" },
+    "status": 0,
+    "stdout": "{\n  \"status\": \"agent runtime likely detected\",\n  \"agent\": \"a\\u0007b\",\n  \"confidence\": 1,\n  \"signals\": [\n    \"env:AGENTHINT_FORCE\"\n  ],\n  \"setup\": {\n    \"kind\": \"heuristic\",\n    \"message\": \"Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal.\",\n    \"hint\": \"Set AI_AGENT=a\\u0007b in the agent's tool-call environment.\"\n  },\n  \"security\": \"use this as a UX hint only, not as a trust boundary\"\n}\n"
+  },
+  {
     "name": "init codex",
     "args": ["init", "codex"],
     "env": {},
@@ -95,6 +116,13 @@
     "env": {},
     "status": 0,
     "stdout": "AI_AGENT=roo-code\n\nUse this value in the environment used for agent tool calls.\n"
+  },
+  {
+    "name": "init keeps dollar patterns in custom names",
+    "args": ["init", "a$&b"],
+    "env": {},
+    "status": 0,
+    "stdout": "AI_AGENT=a$&b\n\nUse this value in the environment used for agent tool calls.\n"
   },
   {
     "name": "init rejects option-like names",

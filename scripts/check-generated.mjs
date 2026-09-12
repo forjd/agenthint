@@ -10,17 +10,29 @@ const generatedPaths = [
   "python/agenthint/messages.json",
 ];
 
-const before = new Map(generatedPaths.map((path) => [path, readFileSync(path, "utf8")]));
-
-execFileSync(process.execPath, ["scripts/generate.mjs"], { stdio: "inherit" });
-
-const stale = generatedPaths.filter((path) => readFileSync(path, "utf8") !== before.get(path));
-
-if (stale.length > 0) {
+function reportStale(paths) {
   console.error("generated files are out of date:");
-  for (const path of stale) {
+  for (const path of paths) {
     console.error(`  ${path}`);
   }
   console.error("Run `npm run generate` and commit the result.");
   process.exit(1);
+}
+
+function readSnapshot(path) {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    reportStale([path]);
+  }
+}
+
+const before = new Map(generatedPaths.map((path) => [path, readSnapshot(path)]));
+
+execFileSync(process.execPath, ["scripts/generate.mjs"], { stdio: "inherit" });
+
+const stale = generatedPaths.filter((path) => readSnapshot(path) !== before.get(path));
+
+if (stale.length > 0) {
+  reportStale(stale);
 }

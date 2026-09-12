@@ -83,13 +83,13 @@ class AgentHintPythonTest(unittest.TestCase):
 
     def test_cli_prints_version(self):
         pyproject = Path("pyproject.toml").read_text(encoding="utf8")
-        match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.MULTILINE)
+        match = re.search(r'^\s*version\s*=\s*(["\'])([^"\']+)\1', pyproject, re.MULTILINE)
 
         self.assertIsNotNone(match)
         result = run_cli(["--version"], {})
 
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout, f"agenthint {match.group(1)}\n")
+        self.assertEqual(result.stdout, f"agenthint {match.group(2)}\n")
 
     @unittest.skipIf(sys.platform == "win32", "invalid UTF-8 env values are a POSIX concept")
     def test_cli_survives_invalid_utf8_env(self):

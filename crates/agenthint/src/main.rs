@@ -4,7 +4,10 @@ use agenthint::{
 };
 
 fn main() {
-    let args = std::env::args().skip(1).collect::<Vec<_>>();
+    let args = std::env::args_os()
+        .skip(1)
+        .map(|s| s.to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
 
     if args.len() == 1 && (args[0] == "-h" || args[0] == "--help") {
         println!("{}", format_help());

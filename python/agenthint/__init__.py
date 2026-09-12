@@ -195,13 +195,24 @@ def _normalize_text(value: str) -> str:
 def package_version() -> str:
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
-    if pyproject.is_file():
-        contents = pyproject.read_text(encoding="utf8")
-        declares_agenthint = re.search(r"""^\s*name\s*=\s*["']agenthint["']\s*(?:#.*)?$""", contents, re.MULTILINE)
-        match = re.search(r"""^\s*version\s*=\s*["']([^"']+)["']""", contents, re.MULTILINE)
+    try:
+        if pyproject.is_file():
+            contents = pyproject.read_text(encoding="utf8")
+            section_match = re.search(r"^\[project\]", contents, re.MULTILINE)
+            if section_match is not None:
+                section_start = section_match.end()
+                next_section = re.search(r"^\[", contents[section_start:], re.MULTILINE)
+                section_end = section_start + next_section.start() if next_section else len(contents)
+                scope = contents[section_start:section_end]
+            else:
+                scope = contents
+            declares_agenthint = re.search(r"""^\s*name\s*=\s*(["'])agenthint\1\s*(?:#.*)?$""", scope, re.MULTILINE)
+            match = re.search(r"""^\s*version\s*=\s*(["'])([^"']+)\1""", scope, re.MULTILINE)
 
-        if declares_agenthint is not None and match is not None:
-            return match.group(1)
+            if declares_agenthint is not None and match is not None:
+                return match.group(2)
+    except (OSError, ValueError):
+        pass
 
     try:
         from importlib.metadata import version as metadata_version
@@ -267,7 +278,10 @@ def _parent_process_name() -> str | None:
         value = trim_whitespace(proc_path.read_text(encoding="utf8"))
         if value:
             return value
-    except OSError:
+    except (OSError, ValueError):
+        # ValueError covers UnicodeDecodeError (issubclass(UnicodeDecodeError,
+        # OSError) is False; it derives from ValueError), so undecodable
+        # /proc output fails closed to unknown instead of raising.
         pass
 
     try:
@@ -279,7 +293,7 @@ def _parent_process_name() -> str | None:
                 text=True,
             ).stdout
         )
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, ValueError, subprocess.CalledProcessError):
         return None
 
 
@@ -320,7 +334,7 @@ def _normalize_agent_name(value: str | None) -> str | None:
 
 
 def _normalize_process_name(value: str | None) -> str | None:
-    trimmed = None if value is None else trim_whitespace(value)
+    trimmed = None if value is None else trim_whitespace(_normalize_text(value))
     if not trimmed:
         return None
     return Path(trimmed).name.lower().removesuffix(".exe")

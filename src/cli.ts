@@ -1,5 +1,8 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { sanitizeForDisplay } from "./display.js";
 import { formatDoctor, formatDoctorJson } from "./doctor.js";
+import { MESSAGES } from "./generated-messages.js";
 import { formatInit } from "./init.js";
 import { detectAgent } from "./index.js";
 import { trimWhitespace } from "./whitespace.js";
@@ -8,6 +11,11 @@ const rawArgs = process.argv.slice(2);
 
 if (rawArgs.length === 1 && (rawArgs[0] === "-h" || rawArgs[0] === "--help")) {
   printHelp();
+  process.exit(0);
+}
+
+if (rawArgs.length === 1 && rawArgs[0] === "--version") {
+  console.log(`agenthint ${packageVersion()}`);
   process.exit(0);
 }
 
@@ -50,32 +58,30 @@ if (rawArgs[0] === "doctor") {
 process.exit(result.isAgent ? 0 : 1);
 
 function printHelp(): void {
-  console.log(`agenthint
-
-Detect whether the current process is probably running under an AI agent.
-
-Usage:
-  agenthint             Exit 0 if an agent is likely detected, otherwise 1
-  agenthint init <name> Print the recommended AI_AGENT value
-  agenthint doctor      Print detection details and setup advice
-  agenthint doctor --json
-                        Print detection details and setup advice as JSON
-  agenthint --json      Print the structured detection result
-  agenthint --explain   Print a short human-readable explanation
-  agenthint --help      Show this help`);
+  console.log(MESSAGES.help);
 }
 
 function printUsageError(message: string): never {
-  console.error(message);
+  console.error(sanitizeForDisplay(message));
   process.exit(2);
 }
 
 function formatExplanation(result: ReturnType<typeof detectAgent>): string {
-  const status = result.isAgent ? "agent runtime likely detected" : "agent runtime not detected";
-  const agent = result.agent ? `\nagent: ${result.agent}` : "";
+  const status = result.isAgent ? MESSAGES.explain.detected : MESSAGES.explain.notDetected;
+  const agent = result.agent ? `\nagent: ${sanitizeForDisplay(result.agent)}` : "";
   const confidence = `\nconfidence: ${result.confidence.toFixed(2)}`;
   const signals =
-    result.signals.length > 0 ? `\nsignals: ${result.signals.join(", ")}` : "\nsignals: none";
+    result.signals.length > 0
+      ? `\nsignals: ${result.signals.map(sanitizeForDisplay).join(", ")}`
+      : "\nsignals: none";
 
   return `${status}${agent}${confidence}${signals}`;
+}
+
+function packageVersion(): string {
+  const packageJson = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  ) as { version?: string };
+
+  return packageJson.version ?? "unknown";
 }

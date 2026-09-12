@@ -51,6 +51,8 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 
 Empty and whitespace-only environment values are ignored. Whitespace is the ASCII set space, `\t`, `\n`, `\v`, `\f`, and `\r`; non-ASCII characters such as U+00A0 or U+FEFF count as values (see `SPEC.md`).
 
+Human-readable output replaces Unicode control characters (category Cc) from agent names and signal names with U+FFFD so env-derived values cannot inject terminal escape sequences. JSON output uses standard JSON escaping.
+
 ## Filesystem Heuristics
 
 | Signal | Agent | Confidence | Type | Configurable |

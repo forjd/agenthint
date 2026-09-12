@@ -1,4 +1,4 @@
-![agenthint banner](banner.png)
+![agenthint banner](https://raw.githubusercontent.com/forjd/agenthint/main/banner.png)
 
 # agenthint
 
@@ -70,6 +70,7 @@ agenthint --explain   # print a short human-readable explanation
 agenthint doctor      # print detection details and setup advice
 agenthint doctor --json
 agenthint init codex  # print the recommended AI_AGENT value
+agenthint --version   # print the version
 ```
 
 Example JSON:

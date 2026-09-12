@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
+import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib.resources import files
@@ -86,81 +88,100 @@ def detect_agent(
 
 
 def format_explanation(result: AgentHintResult) -> str:
-    status = "agent runtime likely detected" if result.is_agent else "agent runtime not detected"
-    agent = f"\nagent: {result.agent}" if result.agent else ""
-    signals = ", ".join(result.signals) if result.signals else "none"
+    messages = _messages()
+    status = messages["explain"]["detected"] if result.is_agent else messages["explain"]["notDetected"]
+    agent = f"\nagent: {sanitize_for_display(result.agent)}" if result.agent else ""
+    signals = ", ".join(sanitize_for_display(signal) for signal in result.signals) if result.signals else "none"
     return f"{status}{agent}\nconfidence: {result.confidence:.2f}\nsignals: {signals}"
 
 
 def format_json(result: AgentHintResult) -> str:
-    return json.dumps(result.to_dict(), indent=2)
+    return json.dumps(result.to_dict(), indent=2, ensure_ascii=False)
 
 
 def format_doctor(result: AgentHintResult) -> str:
+    doctor = _messages()["doctor"]
     lines = [
         "agenthint doctor",
         "",
-        f"status: {'agent runtime likely detected' if result.is_agent else 'agent runtime not detected'}",
-        f"agent: {result.agent or 'none'}",
+        f"status: {doctor['status']['detected'] if result.is_agent else doctor['status']['notDetected']}",
+        f"agent: {sanitize_for_display(result.agent) if result.agent else 'none'}",
         f"confidence: {result.confidence:.2f}",
-        f"signals: {', '.join(result.signals) if result.signals else 'none'}",
+        f"signals: {', '.join(sanitize_for_display(signal) for signal in result.signals) if result.signals else 'none'}",
         "",
     ]
 
     setup = _setup_advice(result)
     if setup["kind"] == "explicit":
-        lines.append(setup["message"])
-    else:
-        lines.append(setup["message"])
+        lines.append(doctor["explicitText"])
+    elif setup["kind"] == "heuristic":
+        lines.append(doctor["heuristicText"])
         lines.append(f"hint: {setup['hint']}")
+    else:
+        lines.append(doctor["missingText"])
+        lines.append(doctor["missingHintText"])
 
     lines.append("")
-    lines.append("security: use this as a UX hint only, not as a trust boundary.")
+    lines.append(doctor["securityText"])
 
     return "\n".join(lines)
 
 
 def format_doctor_json(result: AgentHintResult) -> str:
+    doctor = _messages()["doctor"]
+
     return json.dumps(
         {
-            "status": "agent runtime likely detected" if result.is_agent else "agent runtime not detected",
+            "status": doctor["status"]["detected"] if result.is_agent else doctor["status"]["notDetected"],
             "agent": result.agent,
             "confidence": result.confidence,
             "signals": result.signals,
-            "setup": _setup_advice(result, json_shape=True),
-            "security": "use this as a UX hint only, not as a trust boundary",
+            "setup": _setup_advice(result),
+            "security": doctor["securityJson"],
         },
         indent=2,
+        ensure_ascii=False,
     )
 
 
 def format_init(agent: str | None) -> str:
+    messages = _messages()
     normalized = _normalize_agent_name(agent)
 
     if normalized is None or normalized.startswith("-"):
-        return "\n".join(
-            [
-                "agenthint init",
-                "",
-                "Usage:",
-                "  agenthint init <agent-name>",
-                "",
-                "Example:",
-                "  agenthint init codex",
-            ]
-        )
+        return messages["init"]["usage"]
 
-    return "\n".join(
-        [
-            f"AI_AGENT={normalized}",
-            "",
-            "Use this value in the environment used for agent tool calls.",
-        ]
-    )
+    return messages["init"]["output"].replace("{agent}", sanitize_for_display(normalized))
 
 
 def trim_whitespace(value: str) -> str:
     return value.strip(WHITESPACE)
+
+
+def help_text() -> str:
+    return _messages()["help"]
+
+
+def sanitize_for_display(value: str) -> str:
+    """Replaces Unicode control characters (general category Cc) so env-derived
+    values cannot inject terminal escape sequences into human-readable output."""
+    return "".join("\ufffd" if unicodedata.category(character) == "Cc" else character for character in value)
+
+
+def package_version() -> str:
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+
+    if pyproject.is_file():
+        match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf8"), re.MULTILINE)
+        if match is not None:
+            return match.group(1)
+
+    try:
+        from importlib.metadata import version as metadata_version
+
+        return metadata_version("agenthint")
+    except Exception:
+        return "unknown"
 
 
 def _from_ai_agent(env: Mapping[str, str]) -> AgentHintResult | None:
@@ -276,50 +297,36 @@ def _normalize_process_name(value: str | None) -> str | None:
     return Path(trimmed).name.lower().removesuffix(".exe")
 
 
-def _setup_advice(result: AgentHintResult, *, json_shape: bool = False) -> dict[str, str]:
-    if "env:AI_AGENT" in result.signals:
-        message = "AI_AGENT is set; this is the preferred explicit convention."
-        return {"kind": "explicit", "message": message} if json_shape else {"kind": "explicit", "message": f"setup: {message}"}
+def _setup_advice(result: AgentHintResult) -> dict[str, str]:
+    doctor = _messages()["doctor"]
 
-    if result.is_agent and result.agent is not None:
-        message = "Detection is heuristic. Prefer setting AI_AGENT for a stable explicit signal."
+    if "env:AI_AGENT" in result.signals:
+        return {"kind": "explicit", "message": doctor["explicitMessage"]}
+
+    if result.is_agent:
         return {
             "kind": "heuristic",
-            "message": message if json_shape else f"setup: {message[:1].lower()}{message[1:]}",
-            "hint": _setup_hint(result.agent),
+            "message": doctor["heuristicMessage"],
+            "hint": _setup_hint(result.agent or "unknown"),
         }
 
-    message = "No agent signal was detected."
-    hint = "Agents should set AI_AGENT=<agent-name> before invoking tools."
-    return {
-        "kind": "missing",
-        "message": message if json_shape else f"setup: {message.lower()}",
-        "hint": hint if json_shape else f"{hint[:1].lower()}{hint[1:]}",
-    }
+    return {"kind": "missing", "message": doctor["missingMessage"], "hint": doctor["missingHint"]}
 
 
 def _setup_hint(agent: str) -> str:
-    hints = {
-        "codex": "Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls.",
-        "claude-code": "Set AI_AGENT=claude-code in a PreToolUse hook or shell wrapper.",
-        "cursor": "Set AI_AGENT=cursor in Cursor agent hooks or workspace shell configuration.",
-        "gemini": "Set AI_AGENT=gemini in Gemini CLI hook or shell configuration.",
-        "copilot": "Set AI_AGENT=github-copilot-cli for Copilot CLI or AI_AGENT=github-copilot for Copilot agents.",
-        "windsurf": "Set AI_AGENT=windsurf in .windsurfrules or the workspace shell environment.",
-        "cline": "Set AI_AGENT=cline in .clinerules or the Cline shell environment.",
-        "roo-code": "Set AI_AGENT=roo-code in Roo Code rules or shell environment.",
-        "kilocode": "Set AI_AGENT=kilocode in .kilocode rules or shell environment.",
-        "opencode": "Set AI_AGENT=opencode in an OpenCode plugin or shell environment.",
-        "openclaw": "Set AI_AGENT=openclaw in an OpenClaw plugin or shell environment.",
-        "antigravity": "Set AI_AGENT=antigravity in .agents rules or shell environment.",
-    }
-
-    return hints.get(agent, f"Set AI_AGENT={agent} in the agent's tool-call environment.")
+    doctor = _messages()["doctor"]
+    hint = doctor["agentHints"].get(agent, doctor["fallbackHint"].replace("{agent}", agent))
+    return sanitize_for_display(hint)
 
 
 @lru_cache(maxsize=1)
 def _rules() -> dict[str, object]:
     return json.loads(files("agenthint").joinpath("detection-rules.json").read_text(encoding="utf8"))
+
+
+@lru_cache(maxsize=1)
+def _messages() -> dict[str, object]:
+    return json.loads(files("agenthint").joinpath("messages.json").read_text(encoding="utf8"))
 
 
 __all__ = [
@@ -330,4 +337,7 @@ __all__ = [
     "format_explanation",
     "format_init",
     "format_json",
+    "help_text",
+    "package_version",
+    "sanitize_for_display",
 ]

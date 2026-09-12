@@ -1,25 +1,15 @@
 import { type AgentName, normalizeAgentName } from "./agent-names.js";
+import { sanitizeForDisplay } from "./display.js";
+import { MESSAGES } from "./generated-messages.js";
 
 export function formatInit(agent: string | undefined): string {
   const normalized = normalizeInitAgent(agent);
 
   if (normalized == null) {
-    return [
-      "agenthint init",
-      "",
-      "Usage:",
-      "  agenthint init <agent-name>",
-      "",
-      "Example:",
-      "  agenthint init codex",
-    ].join("\n");
+    return MESSAGES.init.usage;
   }
 
-  return [
-    `AI_AGENT=${normalized}`,
-    "",
-    "Use this value in the environment used for agent tool calls.",
-  ].join("\n");
+  return MESSAGES.init.output.replace("{agent}", sanitizeForDisplay(normalized));
 }
 
 function normalizeInitAgent(agent: string | undefined): AgentName | null {

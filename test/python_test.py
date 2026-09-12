@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 import unittest
@@ -16,6 +17,7 @@ def run_cli(args, env):
         [sys.executable, "-m", "agenthint.cli", *args],
         env=subprocess_env,
         text=True,
+        encoding="utf-8",
         capture_output=True,
         check=False,
     )
@@ -78,6 +80,16 @@ class AgentHintPythonTest(unittest.TestCase):
 
                 for expected in fixture.get("stdoutContains", []):
                     self.assertIn(expected, result.stdout)
+
+    def test_cli_prints_version(self):
+        pyproject = Path("pyproject.toml").read_text(encoding="utf8")
+        match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.MULTILINE)
+
+        self.assertIsNotNone(match)
+        result = run_cli(["--version"], {})
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, f"agenthint {match.group(1)}\n")
 
     def test_cli_rejects_invalid_usage(self):
         result = run_cli(["bogus"], {})

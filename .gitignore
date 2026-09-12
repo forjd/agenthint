@@ -1,10 +1,12 @@
 .DS_Store
 node_modules/
 dist/
+dist-python/
 build/
 target/
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
 *.log
 

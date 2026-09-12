@@ -54,13 +54,12 @@ The release workflow skips `cargo publish` if the crate version is already prese
 
 Native binary releases are produced from the Rust CLI when a GitHub Release is published. Each release also includes per-binary `.sha256` files and a combined `SHA256SUMS` file.
 
-The initial target matrix is:
+The target matrix is:
 
 - Linux x64
+- Linux arm64
 - macOS arm64
 - macOS x64
 - Windows x64
-
-Linux arm64 can be added once the runner target is confirmed for the repository.
 
 The root `install.sh` script downloads the latest `agenthint-v*` binary and verifies it against `SHA256SUMS`. Missing checksums fail closed unless `AGENTHINT_ALLOW_MISSING_CHECKSUM=1` is set explicitly.

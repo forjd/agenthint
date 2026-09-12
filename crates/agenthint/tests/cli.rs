@@ -57,6 +57,37 @@ fn cli_matches_shared_fixtures() {
 }
 
 #[test]
+fn cli_prints_help() {
+    let output = Command::new(env!("CARGO_BIN_EXE_agenthint"))
+        .arg("--help")
+        .env_clear()
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(0));
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    assert!(stdout.contains("agenthint --version"));
+    assert!(stdout.contains("agenthint --help"));
+}
+
+#[test]
+fn cli_prints_version() {
+    let output = Command::new(env!("CARGO_BIN_EXE_agenthint"))
+        .arg("--version")
+        .env_clear()
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        format!("agenthint {}\n", env!("CARGO_PKG_VERSION"))
+    );
+}
+
+#[test]
 fn cli_rejects_invalid_usage() {
     let output = Command::new(env!("CARGO_BIN_EXE_agenthint"))
         .arg("bogus")

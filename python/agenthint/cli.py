@@ -9,15 +9,28 @@ from agenthint import (
     format_explanation,
     format_init,
     format_json,
+    help_text,
+    package_version,
+    sanitize_for_display,
     trim_whitespace,
 )
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except (OSError, ValueError):
+            pass
+
     args = sys.argv[1:]
 
     if len(args) == 1 and args[0] in {"-h", "--help"}:
-        print_help()
+        print(help_text())
+        raise SystemExit(0)
+
+    if len(args) == 1 and args[0] == "--version":
+        print(f"agenthint {package_version()}")
         raise SystemExit(0)
 
     if args[:1] == ["init"]:
@@ -48,26 +61,8 @@ def main() -> None:
     raise SystemExit(0 if result.is_agent else 1)
 
 
-def print_help() -> None:
-    print(
-        """agenthint
-
-Detect whether the current process is probably running under an AI agent.
-
-Usage:
-  agenthint             Exit 0 if an agent is likely detected, otherwise 1
-  agenthint init <name> Print the recommended AI_AGENT value
-  agenthint doctor      Print detection details and setup advice
-  agenthint doctor --json
-                        Print detection details and setup advice as JSON
-  agenthint --json      Print the structured detection result
-  agenthint --explain   Print a short human-readable explanation
-  agenthint --help      Show this help"""
-    )
-
-
 def print_usage_error(message: str) -> None:
-    print(message, file=sys.stderr)
+    print(sanitize_for_display(message), file=sys.stderr)
     raise SystemExit(2)
 
 

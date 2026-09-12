@@ -117,6 +117,10 @@ Current explicit-only known names:
 
 Filesystem checks should be documented and configurable.
 
+## Output Safety
+
+Human-readable output should replace Unicode control characters (general category Cc) from dynamic values such as agent names and signal names with U+FFFD. This keeps env-derived values from injecting terminal escape sequences. JSON output should rely on standard JSON escaping instead.
+
 ## Exit Codes
 
 The `agenthint` CLI should use:
@@ -126,6 +130,8 @@ The `agenthint` CLI should use:
 - `2`: invalid usage or detection error
 
 Subcommands that only print setup information, such as `agenthint init <agent>`, should exit `0` when invoked successfully.
+
+`agenthint --version` should print `agenthint <version>` and exit `0`.
 
 `agenthint --json` should return the raw detection result. `agenthint doctor --json` may return a richer diagnostic object that includes setup advice while preserving the same detection-based exit code as `agenthint doctor`.
 

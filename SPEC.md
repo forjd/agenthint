@@ -39,9 +39,11 @@ AI_AGENT=my-custom-agent my-tool
 
 `AI_AGENT` should be checked before heuristic signals. Empty and whitespace-only values should be ignored.
 
+Heuristic environment values that are empty or whitespace-only should also be ignored.
+
 ## Override Conventions
 
-`AGENTHINT_DISABLE` forces a no-agent result and `AGENTHINT_FORCE` forces an agent result; both take precedence over `AI_AGENT` and heuristics. When `AGENTHINT_FORCE` is set, `AGENTHINT_AGENT` optionally names the forced agent; otherwise the agent is `unknown`. Truthy values are `1`, `true`, `yes`, and `on`.
+`AGENTHINT_DISABLE` forces a no-agent result and `AGENTHINT_FORCE` forces an agent result; both take precedence over `AI_AGENT` and heuristics. When `AGENTHINT_FORCE` is set, `AGENTHINT_AGENT` optionally names the forced agent; otherwise the agent is `unknown`. Truthy values are `1`, `true`, `yes`, and `on`, case-insensitively.
 
 ## Signal Ordering and Ties
 
@@ -98,6 +100,8 @@ Initial candidates:
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
 
 `CLAUDE_CODE_IS_COWORK` is a classifier only. It may select `cowork` when another Claude signal is present, but should not be treated as an agent signal by itself. When it does select `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` to keep the classification explainable.
+
+Stdio TTY hints such as `stdio:stdout-not-tty` are opt-in library signals only. They require an explicit `stdoutIsTTY: false` or `stdinIsTTY: false` option and must not mark the process as an agent. CLI defaults must not auto-report piped output as an agent signal.
 
 Known agent names without stable heuristic signals should still be supported through `AI_AGENT`.
 Current explicit-only known names:

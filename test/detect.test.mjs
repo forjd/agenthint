@@ -217,4 +217,69 @@ describe("detectAgent", () => {
     assert.equal(result.confidence, 0.2);
     assert.deepEqual(result.signals, ["stdio:stdout-not-tty", "stdio:stdin-not-tty"]);
   });
+
+  it("prefers the earliest rule on confidence ties", () => {
+    const result = detectAgent({
+      env: { CURSOR_AGENT: "1", GEMINI_CLI: "true" },
+      checkFilesystem: false,
+      checkParentProcess: false,
+    });
+
+    assert.equal(result.isAgent, true);
+    assert.equal(result.agent, "cursor");
+    assert.equal(result.confidence, 0.92);
+  });
+
+  it("sorts prefix signals", () => {
+    const result = detectAgent({
+      env: { AIDER_ZZZ: "1", AIDER_MODEL: "sonnet", AIDER_AAA: "1" },
+      checkFilesystem: false,
+      checkParentProcess: false,
+    });
+
+    assert.deepEqual(result.signals, ["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]);
+  });
+
+  it("ignores whitespace-only heuristic values", () => {
+    const result = detectAgent({
+      env: { CODEX_HOME: "   " },
+      checkFilesystem: false,
+      checkParentProcess: false,
+    });
+
+    assert.equal(result.isAgent, false);
+    assert.equal(result.agent, null);
+  });
+
+  it("includes the cowork classifier alongside the triggering signal", () => {
+    const result = detectAgent({
+      env: { CLAUDE_CODE: "1", CLAUDE_CODE_IS_COWORK: "1" },
+      checkFilesystem: false,
+      checkParentProcess: false,
+    });
+
+    assert.equal(result.agent, "cowork");
+    assert.deepEqual(result.signals, ["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]);
+  });
+
+  it("normalizes parent process .exe case-insensitively", () => {
+    const result = detectAgent({
+      env: {},
+      checkFilesystem: false,
+      parentProcessName: "/usr/local/bin/Codex.EXE",
+    });
+
+    assert.equal(result.agent, "codex");
+    assert.deepEqual(result.signals, ["process:parent:codex"]);
+  });
+
+  it("treats AGENTHINT overrides case-insensitively", () => {
+    const forced = detectAgent({ env: { AGENTHINT_FORCE: "True" } });
+    const disabled = detectAgent({
+      env: { AGENTHINT_DISABLE: "YES", CODEX_HOME: "/tmp/codex" },
+    });
+
+    assert.equal(forced.isAgent, true);
+    assert.equal(disabled.isAgent, false);
+  });
 });

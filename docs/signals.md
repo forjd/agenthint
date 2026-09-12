@@ -6,9 +6,9 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 
 | Signal | Agent | Confidence | Type | Notes |
 | --- | --- | ---: | --- | --- |
-| `env:AGENTHINT_DISABLE` | none | `1.00` | explicit | Forces no-agent result for local overrides and tests. |
-| `env:AGENTHINT_FORCE` | `AGENTHINT_AGENT` or `unknown` | `1.00` | explicit | Forces an agent result for local overrides and tests. |
-| `env:AI_AGENT` | normalized value | `0.98` | explicit | Preferred portable convention. Values are not printed. |
+| `env:AGENTHINT_DISABLE` | none | `1.00` | explicit | Forces no-agent result for local overrides and tests. Truthy as `1`, `true`, `yes`, `on`, case-insensitively. |
+| `env:AGENTHINT_FORCE` | `AGENTHINT_AGENT` or `unknown` | `1.00` | explicit | Forces an agent result for local overrides and tests. Truthy as `1`, `true`, `yes`, `on`, case-insensitively. |
+| `env:AI_AGENT` | normalized value | `0.98` | explicit | Preferred portable convention. Values are not printed. Empty and whitespace-only values are ignored. |
 
 ## Environment Heuristics
 
@@ -49,6 +49,8 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 
 `REPL_ID` is present in every Replit workspace, including human-driven sessions, which is why it reports a low `0.65` confidence. Exit-code consumers that want to avoid false positives can read `confidence` from `agenthint --json` and apply their own threshold.
 
+Empty and whitespace-only environment values are ignored.
+
 ## Filesystem Heuristics
 
 | Signal | Agent | Confidence | Type | Configurable |
@@ -77,8 +79,8 @@ Parent process detection reads `/proc` or `ps`, so it is effectively unavailable
 
 | Signal | Agent | Confidence | Type | Notes |
 | --- | --- | ---: | --- | --- |
-| `stdio:stdout-not-tty` | none | `0.20` | hint | Does not mark the process as an agent. |
-| `stdio:stdin-not-tty` | none | `0.20` | hint | Does not mark the process as an agent. |
+| `stdio:stdout-not-tty` | none | `0.20` | hint | Does not mark the process as an agent. Library opt-in only via explicit `stdoutIsTTY: false`. |
+| `stdio:stdin-not-tty` | none | `0.20` | hint | Does not mark the process as an agent. Library opt-in only via explicit `stdinIsTTY: false`. |
 
 ## Explicit-Only Known Agents
 

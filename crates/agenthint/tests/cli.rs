@@ -72,3 +72,19 @@ fn cli_rejects_invalid_usage() {
             .contains("invalid usage: bogus")
     );
 }
+
+#[test]
+fn cli_treats_non_leading_init_as_invalid_usage() {
+    let output = Command::new(env!("CARGO_BIN_EXE_agenthint"))
+        .args(["foo", "init", "bar"])
+        .env_clear()
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("invalid usage: foo init bar")
+    );
+}

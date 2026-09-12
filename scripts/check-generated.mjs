@@ -12,7 +12,7 @@ const generatedPaths = [
 
 const before = new Map(generatedPaths.map((path) => [path, readFileSync(path, "utf8")]));
 
-execFileSync("node", ["scripts/generate.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["scripts/generate.mjs"], { stdio: "inherit" });
 
 const stale = generatedPaths.filter((path) => readFileSync(path, "utf8") !== before.get(path));
 

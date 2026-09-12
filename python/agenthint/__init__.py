@@ -175,10 +175,21 @@ def sanitize_for_display(value: str) -> str:
 
 
 def _normalize_text(value: str) -> str:
+    # Map lone surrogates outside the surrogateescape range (U+DC80-U+DCFF)
+    # to U+FFFD first. Otherwise the utf-8/replace fallback would emit "?"
+    # for direct API input like "\ud800", breaking parity with
+    # sanitize_for_display and the TS/Rust implementations.
+    cleaned = "".join(
+        "\ufffd"
+        if 0xD800 <= ord(character) <= 0xDFFF and not 0xDC80 <= ord(character) <= 0xDCFF
+        else character
+        for character in value
+    )
     try:
-        return value.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
+        return cleaned.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
     except UnicodeEncodeError:
-        return value.encode("utf-8", "replace").decode("utf-8", "replace")
+        # Defensive: unreachable after cleaning, but never emit "?".
+        return "".join("\ufffd" if 0xD800 <= ord(character) <= 0xDFFF else character for character in cleaned)
 
 
 def package_version() -> str:
@@ -186,8 +197,8 @@ def package_version() -> str:
 
     if pyproject.is_file():
         contents = pyproject.read_text(encoding="utf8")
-        declares_agenthint = re.search(r'^name\s*=\s*"agenthint"\s*$', contents, re.MULTILINE)
-        match = re.search(r'^version\s*=\s*"([^"]+)"', contents, re.MULTILINE)
+        declares_agenthint = re.search(r"""^\s*name\s*=\s*["']agenthint["']\s*(?:#.*)?$""", contents, re.MULTILINE)
+        match = re.search(r"""^\s*version\s*=\s*["']([^"']+)["']""", contents, re.MULTILINE)
 
         if declares_agenthint is not None and match is not None:
             return match.group(1)

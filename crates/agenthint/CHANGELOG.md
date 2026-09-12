@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.2](https://github.com/forjd/agenthint/compare/agenthint-v0.4.1...agenthint-v0.4.2) (2026-09-12)
+
+
+### Bug Fixes
+
+* address PR review findings for detection parity ([6c61594](https://github.com/forjd/agenthint/commit/6c61594173da0703a97416d11d7d08e01aad51fb))
+* align detection and init behavior across implementations ([87fd407](https://github.com/forjd/agenthint/commit/87fd40787b04a28dbd6751ffd7c7f6caedacd2e1))
+* align detection parity across TS, Rust and Python ([a4418b5](https://github.com/forjd/agenthint/commit/a4418b5bd83bae1aa9c2712c657590c3fbfdae09))
+
 ## [0.4.1](https://github.com/forjd/agenthint/compare/agenthint-v0.4.0...agenthint-v0.4.1) (2026-05-09)
 
 

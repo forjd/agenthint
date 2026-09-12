@@ -9,7 +9,7 @@ export function formatInit(agent: string | undefined): string {
     return MESSAGES.init.usage;
   }
 
-  return MESSAGES.init.output.replace("{agent}", sanitizeForDisplay(normalized));
+  return MESSAGES.init.output.replace("{agent}", () => sanitizeForDisplay(normalized));
 }
 
 function normalizeInitAgent(agent: string | undefined): AgentName | null {

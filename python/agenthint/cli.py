@@ -19,7 +19,7 @@ from agenthint import (
 def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         try:
-            sys.stdout.reconfigure(encoding="utf-8")
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
         except (OSError, ValueError):
             pass
 

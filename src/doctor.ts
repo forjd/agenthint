@@ -21,7 +21,7 @@ export function formatDoctor(result: AgentHintResult): string {
     lines.push(MESSAGES.doctor.explicitText);
   } else if (setup.kind === "heuristic") {
     lines.push(MESSAGES.doctor.heuristicText);
-    lines.push(`hint: ${setup.hint}`);
+    lines.push(`hint: ${sanitizeForDisplay(setup.hint ?? "")}`);
   } else {
     lines.push(MESSAGES.doctor.missingText);
     lines.push(MESSAGES.doctor.missingHintText);
@@ -73,7 +73,6 @@ function setupAdvice(result: AgentHintResult): { kind: string; message: string; 
 
 function setupHint(agent: string): string {
   const hints = MESSAGES.doctor.agentHints as Record<string, string>;
-  const hint = hints[agent] ?? MESSAGES.doctor.fallbackHint.replace("{agent}", agent);
 
-  return sanitizeForDisplay(hint);
+  return hints[agent] ?? MESSAGES.doctor.fallbackHint.replace("{agent}", () => agent);
 }

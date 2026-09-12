@@ -87,6 +87,27 @@ fn cli_prints_version() {
     );
 }
 
+#[cfg(unix)]
+#[test]
+fn cli_survives_invalid_utf8_env() {
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+
+    let output = Command::new(env!("CARGO_BIN_EXE_agenthint"))
+        .arg("--json")
+        .env_clear()
+        .env("AI_AGENT", OsStr::from_bytes(b"a\xffb"))
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(0));
+    assert!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .contains("\"agent\": \"a\u{FFFD}b\"")
+    );
+}
+
 #[test]
 fn cli_rejects_invalid_usage() {
     let output = Command::new(env!("CARGO_BIN_EXE_agenthint"))

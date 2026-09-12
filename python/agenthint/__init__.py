@@ -47,6 +47,9 @@ def detect_agent(
     file_exists: Callable[[str], bool] = os.path.exists,
 ) -> AgentHintResult:
     env = os.environ if env is None else env
+    # POSIX decodes invalid UTF-8 bytes with surrogateescape. Normalize those
+    # to U+FFFD so output stays valid UTF-8 and matches the Node behavior.
+    env = {_normalize_text(name): _normalize_text(value) for name, value in env.items()}
 
     if _is_truthy(env.get("AGENTHINT_DISABLE")):
         return AgentHintResult(False, None, 1, ["env:AGENTHINT_DISABLE"])
@@ -116,7 +119,7 @@ def format_doctor(result: AgentHintResult) -> str:
         lines.append(doctor["explicitText"])
     elif setup["kind"] == "heuristic":
         lines.append(doctor["heuristicText"])
-        lines.append(f"hint: {setup['hint']}")
+        lines.append(f"hint: {sanitize_for_display(setup['hint'])}")
     else:
         lines.append(doctor["missingText"])
         lines.append(doctor["missingHintText"])
@@ -163,17 +166,30 @@ def help_text() -> str:
 
 
 def sanitize_for_display(value: str) -> str:
-    """Replaces Unicode control characters (general category Cc) so env-derived
-    values cannot inject terminal escape sequences into human-readable output."""
-    return "".join("\ufffd" if unicodedata.category(character) == "Cc" else character for character in value)
+    """Replaces Unicode control characters (category Cc) and lone surrogates
+    (category Cs) so env-derived values cannot inject terminal escape
+    sequences or break encoding in human-readable output."""
+    return "".join(
+        "\ufffd" if unicodedata.category(character) in {"Cc", "Cs"} else character for character in value
+    )
+
+
+def _normalize_text(value: str) -> str:
+    try:
+        return value.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
+    except UnicodeEncodeError:
+        return value.encode("utf-8", "replace").decode("utf-8", "replace")
 
 
 def package_version() -> str:
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
     if pyproject.is_file():
-        match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf8"), re.MULTILINE)
-        if match is not None:
+        contents = pyproject.read_text(encoding="utf8")
+        declares_agenthint = re.search(r'^name\s*=\s*"agenthint"\s*$', contents, re.MULTILINE)
+        match = re.search(r'^version\s*=\s*"([^"]+)"', contents, re.MULTILINE)
+
+        if declares_agenthint is not None and match is not None:
             return match.group(1)
 
     try:
@@ -261,7 +277,9 @@ def _present(env: Mapping[str, str], names: list[str]) -> list[str]:
 
 
 def _prefix_present(env: Mapping[str, str], prefix: str) -> list[str]:
-    return sorted(f"env:{name}" for name, value in env.items() if name.startswith(prefix) and _has_value(value))
+    return sorted(
+        f"env:{_normalize_text(name)}" for name, value in env.items() if name.startswith(prefix) and _has_value(value)
+    )
 
 
 def _has_value(value: str | None) -> bool:
@@ -273,7 +291,7 @@ def _is_truthy(value: str | None) -> bool:
 
 
 def _normalize_agent_name(value: str | None) -> str | None:
-    normalized = None if value is None else trim_whitespace(value)
+    normalized = None if value is None else trim_whitespace(_normalize_text(value))
     if not normalized:
         return None
 
@@ -315,8 +333,7 @@ def _setup_advice(result: AgentHintResult) -> dict[str, str]:
 
 def _setup_hint(agent: str) -> str:
     doctor = _messages()["doctor"]
-    hint = doctor["agentHints"].get(agent, doctor["fallbackHint"].replace("{agent}", agent))
-    return sanitize_for_display(hint)
+    return doctor["agentHints"].get(agent, doctor["fallbackHint"].replace("{agent}", agent))
 
 
 @lru_cache(maxsize=1)

@@ -38,7 +38,16 @@ pub struct DetectAgentOptions {
 impl Default for DetectAgentOptions {
     fn default() -> Self {
         Self {
-            env: std::env::vars().collect(),
+            // vars_os with lossy conversion avoids panicking on invalid Unicode
+            // and matches the U+FFFD replacement used by the Node implementation.
+            env: std::env::vars_os()
+                .map(|(key, value)| {
+                    (
+                        key.to_string_lossy().into_owned(),
+                        value.to_string_lossy().into_owned(),
+                    )
+                })
+                .collect(),
             stdin_is_tty: None,
             stdout_is_tty: None,
             check_filesystem: true,
@@ -214,7 +223,7 @@ pub fn format_doctor(result: &AgentHintResult) -> String {
         format!(
             "{}\nhint: {}",
             generated_messages::DOCTOR_HEURISTIC_TEXT,
-            setup_hint(result.agent.as_deref().unwrap_or("unknown"))
+            sanitize_for_display(&setup_hint(result.agent.as_deref().unwrap_or("unknown")))
         )
     } else {
         format!(
@@ -536,10 +545,10 @@ fn setup_hint(agent: &str) -> String {
         .iter()
         .find(|(name, _)| *name == agent)
     {
-        return sanitize_for_display(hint);
+        return (*hint).to_string();
     }
 
-    sanitize_for_display(&generated_messages::DOCTOR_FALLBACK_HINT.replace("{agent}", agent))
+    generated_messages::DOCTOR_FALLBACK_HINT.replace("{agent}", agent)
 }
 
 fn escape_json(value: &str) -> String {

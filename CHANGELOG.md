@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/forjd/agenthint/compare/v0.4.2...v0.5.0) (2026-09-12)
+
+
+### Features
+
+* harden cross-language output parity and release tooling ([b2707e0](https://github.com/forjd/agenthint/commit/b2707e0cdf267b7a87d74749c4b0e26a72fe32fc))
+
+
+### Bug Fixes
+
+* address follow-up nits from PR review ([65e6508](https://github.com/forjd/agenthint/commit/65e65086236fc8f0c039c35ff641a1091ca48dec))
+* address PR review findings ([a1ac9c5](https://github.com/forjd/agenthint/commit/a1ac9c55f5424550280e2bb66dd482159af79e95))
+* address PR review hardening findings ([53a6781](https://github.com/forjd/agenthint/commit/53a6781cde4f72b58ddecd7062a3f1c2089f8bd2))
+
 ## [0.4.2](https://github.com/forjd/agenthint/compare/v0.4.1...v0.4.2) (2026-09-12)
 
 

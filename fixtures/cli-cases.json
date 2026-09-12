@@ -135,5 +135,12 @@
     "args": ["init", "\u000b\t "],
     "env": {},
     "status": 2
+  },
+  {
+    "name": "init sanitizes control characters",
+    "args": ["init", "a\u0007b"],
+    "env": {},
+    "status": 0,
+    "stdoutContains": ["AI_AGENT=a\uFFFDb"]
   }
 ]

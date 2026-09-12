@@ -1,11 +1,12 @@
 import type { GeneratedKnownAgent } from "./generated-rules.js";
+import { trimWhitespace } from "./whitespace.js";
 
 export type KnownAgent = GeneratedKnownAgent;
 
 export type AgentName = KnownAgent | (string & {});
 
 export function normalizeAgentName(value: string | undefined): AgentName | null {
-  const normalized = value?.trim();
+  const normalized = value == null ? null : trimWhitespace(value);
 
   if (normalized == null || normalized === "") {
     return null;

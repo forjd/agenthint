@@ -37,9 +37,11 @@ AI_AGENT=claude-code/2.1.123/agent my-tool
 AI_AGENT=my-custom-agent my-tool
 ```
 
-`AI_AGENT` should be checked before heuristic signals. Empty and whitespace-only values should be ignored.
+`AI_AGENT` should be checked before heuristic signals. Leading and trailing whitespace is trimmed, and empty or whitespace-only values should be ignored.
 
 Heuristic environment values that are empty or whitespace-only should also be ignored.
+
+For portability, whitespace means exactly the ASCII characters space, tab (`\t`), line feed (`\n`), vertical tab (`\v`), form feed (`\f`), and carriage return (`\r`). Implementations should not rely on their language's native trim, which differs on non-ASCII characters such as U+00A0, U+0085, and U+FEFF; those characters are treated as ordinary values. The same rule applies to `AGENTHINT_AGENT`, parent process names, and `agenthint init <name>`.
 
 ## Override Conventions
 

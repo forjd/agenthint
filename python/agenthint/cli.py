@@ -9,6 +9,7 @@ from agenthint import (
     format_explanation,
     format_init,
     format_json,
+    trim_whitespace,
 )
 
 
@@ -20,7 +21,7 @@ def main() -> None:
         raise SystemExit(0)
 
     if args[:1] == ["init"]:
-        if len(args) != 2 or not args[1].strip() or args[1].startswith("-"):
+        if len(args) != 2 or not trim_whitespace(args[1]) or args[1].startswith("-"):
             print_usage_error(format_init(None))
 
         print(format_init(args[1]))

@@ -47,6 +47,14 @@ impl Default for DetectAgentOptions {
     }
 }
 
+/// Trims the ASCII whitespace set defined in SPEC.md (space, tab, LF, VT, FF, CR).
+///
+/// Native trim functions disagree on non-ASCII whitespace, so every implementation
+/// trims this exact set instead.
+pub fn trim_whitespace(value: &str) -> &str {
+    value.trim_matches([' ', '\t', '\n', '\x0B', '\x0C', '\r'])
+}
+
 pub fn detect_agent() -> AgentHintResult {
     detect_agent_with_options(DetectAgentOptions::default())
 }
@@ -283,16 +291,11 @@ struct AgentMatch {
 }
 
 fn from_ai_agent_env_var(env: &HashMap<String, String>) -> Option<AgentHintResult> {
-    let value = env.get("AI_AGENT")?.trim();
-    if value.is_empty() {
-        return None;
-    }
+    let agent = normalize_agent_name(env.get("AI_AGENT"))?;
 
     Some(AgentHintResult {
         is_agent: true,
-        agent: Some(
-            normalize_agent_name(Some(&value.to_string())).unwrap_or_else(|| value.to_string()),
-        ),
+        agent: Some(agent),
         confidence: 0.98,
         signals: vec!["env:AI_AGENT".to_string()],
     })
@@ -361,7 +364,7 @@ fn parent_process_name() -> Option<String> {
     let proc_path = format!("/proc/{ppid}/comm");
 
     if let Ok(value) = std::fs::read_to_string(proc_path) {
-        let trimmed = value.trim();
+        let trimmed = trim_whitespace(&value);
         if !trimmed.is_empty() {
             return Some(trimmed.to_string());
         }
@@ -377,7 +380,7 @@ fn parent_process_name() -> Option<String> {
     }
 
     let value = String::from_utf8(output.stdout).ok()?;
-    let trimmed = value.trim();
+    let trimmed = trim_whitespace(&value);
 
     if trimmed.is_empty() {
         None
@@ -397,7 +400,7 @@ fn parent_pid() -> Option<u32> {
 }
 
 fn normalize_process_name(value: &str) -> Option<String> {
-    let trimmed = value.trim();
+    let trimmed = trim_whitespace(value);
     if trimmed.is_empty() {
         return None;
     }
@@ -435,10 +438,7 @@ fn push_prefix(
 fn present(env: &HashMap<String, String>, names: &[&str]) -> Vec<String> {
     names
         .iter()
-        .filter(|name| {
-            env.get(**name)
-                .is_some_and(|value| !value.trim().is_empty())
-        })
+        .filter(|name| env.get(**name).is_some_and(|value| has_value(value)))
         .map(|name| format!("env:{name}"))
         .collect()
 }
@@ -446,7 +446,7 @@ fn present(env: &HashMap<String, String>, names: &[&str]) -> Vec<String> {
 fn prefix_present(env: &HashMap<String, String>, prefix: &str) -> Vec<String> {
     let mut signals = env
         .iter()
-        .filter(|(name, value)| name.starts_with(prefix) && !value.trim().is_empty())
+        .filter(|(name, value)| name.starts_with(prefix) && has_value(value))
         .map(|(name, _)| format!("env:{name}"))
         .collect::<Vec<_>>();
 
@@ -454,9 +454,11 @@ fn prefix_present(env: &HashMap<String, String>, prefix: &str) -> Vec<String> {
     signals
 }
 
+fn has_value(value: &str) -> bool {
+    !trim_whitespace(value).is_empty()
+}
+
 fn tty_hints(options: &DetectAgentOptions) -> Vec<String> {
-    // Stdio hints are opt-in library signals only. The CLI does not auto-report
-    // piped output as an agent signal to avoid false positives in scripts.
     let mut signals = Vec::new();
 
     if options.stdout_is_tty == Some(false) {
@@ -475,7 +477,7 @@ fn is_truthy(value: Option<&String>) -> bool {
 }
 
 fn normalize_agent_name(value: Option<&String>) -> Option<String> {
-    let normalized = value?.trim();
+    let normalized = trim_whitespace(value?);
     if normalized.is_empty() {
         return None;
     }
@@ -584,7 +586,14 @@ mod tests {
                 .iter()
                 .map(|(key, value)| (key.to_string(), value.as_str().unwrap().to_string()))
                 .collect::<HashMap<_, _>>();
-            let result = detect(fixture_env);
+            let parent_process_name = fixture["parentProcessName"].as_str().map(str::to_string);
+            let result = detect_agent_with_options(DetectAgentOptions {
+                env: fixture_env,
+                check_filesystem: false,
+                check_parent_process: parent_process_name.is_some(),
+                parent_process_name,
+                ..DetectAgentOptions::default()
+            });
             let expected_agent = fixture["agent"].as_str();
             let expected_signals = fixture["signals"]
                 .as_array()
@@ -626,6 +635,12 @@ mod tests {
                 .iter()
                 .map(|arg| arg.as_str().unwrap())
                 .collect::<Vec<_>>();
+
+            // Help text lives in the binary; tests/cli.rs covers it.
+            if args.contains(&"--help") {
+                continue;
+            }
+
             let fixture_env = fixture["env"]
                 .as_object()
                 .unwrap()
@@ -848,58 +863,6 @@ mod tests {
             result.signals,
             vec!["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]
         );
-    }
-
-    #[test]
-    fn prefers_earliest_rule_on_confidence_ties() {
-        let result = detect(env(&[("CURSOR_AGENT", "1"), ("GEMINI_CLI", "true")]));
-
-        assert_eq!(result.agent.as_deref(), Some("cursor"));
-        assert_eq!(result.confidence, 0.92);
-    }
-
-    #[test]
-    fn ignores_whitespace_only_heuristic_values() {
-        let result = detect(env(&[("CODEX_HOME", "   ")]));
-
-        assert!(!result.is_agent);
-        assert_eq!(result.agent, None);
-    }
-
-    #[test]
-    fn includes_cowork_classifier_signal() {
-        let result = detect(env(&[("CLAUDE_CODE", "1"), ("CLAUDE_CODE_IS_COWORK", "1")]));
-
-        assert_eq!(result.agent.as_deref(), Some("cowork"));
-        assert_eq!(
-            result.signals,
-            vec!["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
-        );
-    }
-
-    #[test]
-    fn normalizes_parent_exe_case_insensitively() {
-        let result = detect_agent_with_options(DetectAgentOptions {
-            env: HashMap::new(),
-            check_filesystem: false,
-            parent_process_name: Some("/usr/local/bin/Codex.EXE".to_string()),
-            ..DetectAgentOptions::default()
-        });
-
-        assert_eq!(result.agent.as_deref(), Some("codex"));
-        assert_eq!(result.signals, vec!["process:parent:codex"]);
-    }
-
-    #[test]
-    fn truthy_overrides_are_case_insensitive() {
-        let forced = detect(env(&[("AGENTHINT_FORCE", "True")]));
-        let disabled = detect(env(&[
-            ("AGENTHINT_DISABLE", "YES"),
-            ("CODEX_HOME", "/tmp/codex"),
-        ]));
-
-        assert!(forced.is_agent);
-        assert!(!disabled.is_agent);
     }
 
     #[test]

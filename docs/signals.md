@@ -49,7 +49,7 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 
 `REPL_ID` is present in every Replit workspace, including human-driven sessions, which is why it reports a low `0.65` confidence. Exit-code consumers that want to avoid false positives can read `confidence` from `agenthint --json` and apply their own threshold.
 
-Empty and whitespace-only environment values are ignored.
+Empty and whitespace-only environment values are ignored. Whitespace is the ASCII set space, `\t`, `\n`, `\v`, `\f`, and `\r`; non-ASCII characters such as U+00A0 or U+FEFF count as values (see `SPEC.md`).
 
 ## Filesystem Heuristics
 

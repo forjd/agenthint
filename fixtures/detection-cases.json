@@ -16,6 +16,22 @@
     "signals": []
   },
   {
+    "name": "AI_AGENT trims only the portable ASCII whitespace set",
+    "env": { "AI_AGENT": "\t\u000b\f codex \r\n" },
+    "isAgent": true,
+    "agent": "codex",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "AI_AGENT keeps non-ASCII whitespace",
+    "env": { "AI_AGENT": "\ufeff" },
+    "isAgent": true,
+    "agent": "\ufeff",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
     "name": "copilot alias",
     "env": { "AI_AGENT": "github-copilot-cli" },
     "isAgent": true,
@@ -40,6 +56,27 @@
     "signals": ["env:CODEX_HOME"]
   },
   {
+    "name": "ASCII whitespace-only heuristic values are ignored",
+    "env": { "CODEX_HOME": " \t\n\u000b\f\r", "AIDER_MODEL": "  " },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 0,
+    "signals": []
+  },
+  {
+    "name": "non-ASCII whitespace heuristic values still count",
+    "env": {
+      "CODEX_SANDBOX": "\ufeff",
+      "CODEX_CI": "\u0085",
+      "CODEX_THREAD_ID": "\u001c",
+      "CODEX_HOME": "\u00a0"
+    },
+    "isAgent": true,
+    "agent": "codex",
+    "confidence": 0.92,
+    "signals": ["env:CODEX_SANDBOX", "env:CODEX_CI", "env:CODEX_THREAD_ID", "env:CODEX_HOME"]
+  },
+  {
     "name": "claude code env",
     "env": { "CLAUDECODE": "1" },
     "isAgent": true,
@@ -54,6 +91,22 @@
     "agent": "cowork",
     "confidence": 0.9,
     "signals": ["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
+  },
+  {
+    "name": "whitespace-only cowork classifier is ignored",
+    "env": { "CLAUDE_CODE": "1", "CLAUDE_CODE_IS_COWORK": " \t" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.9,
+    "signals": ["env:CLAUDE_CODE"]
+  },
+  {
+    "name": "cowork classifier alone is not an agent",
+    "env": { "CLAUDE_CODE_IS_COWORK": "1" },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 0,
+    "signals": []
   },
   {
     "name": "aider prefix",
@@ -110,5 +163,30 @@
     "agent": null,
     "confidence": 1,
     "signals": ["env:AGENTHINT_DISABLE"]
+  },
+  {
+    "name": "forced agent truthy value is case-insensitive",
+    "env": { "AGENTHINT_FORCE": "True" },
+    "isAgent": true,
+    "agent": "unknown",
+    "confidence": 1,
+    "signals": ["env:AGENTHINT_FORCE"]
+  },
+  {
+    "name": "disabled agent truthy value is case-insensitive",
+    "env": { "AGENTHINT_DISABLE": "YES", "CODEX_HOME": "/tmp/codex" },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 1,
+    "signals": ["env:AGENTHINT_DISABLE"]
+  },
+  {
+    "name": "parent process .exe suffix is case-insensitive",
+    "env": {},
+    "parentProcessName": "/usr/local/bin/Codex.EXE",
+    "isAgent": true,
+    "agent": "codex",
+    "confidence": 0.55,
+    "signals": ["process:parent:codex"]
   }
 ]

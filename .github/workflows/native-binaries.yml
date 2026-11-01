@@ -21,6 +21,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: native-binaries-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -28,7 +32,7 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.name }}
-    if: ${{ inputs.tag != '' || startsWith(github.event.release.tag_name, 'agenthint-v') }}
+    if: ${{ startsWith(inputs.tag || github.event.release.tag_name, 'agenthint-v') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -63,6 +67,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Build the tagged source, not the commit that started this run.
+          ref: ${{ env.RELEASE_TAG }}
+          persist-credentials: false
 
       - name: Install toolchains
         uses: jdx/mise-action@v5
@@ -116,7 +124,7 @@ jobs:
 
   checksums:
     name: Publish SHA256SUMS
-    if: ${{ inputs.tag != '' || startsWith(github.event.release.tag_name, 'agenthint-v') }}
+    if: ${{ startsWith(inputs.tag || github.event.release.tag_name, 'agenthint-v') }}
     needs: build
     runs-on: ubuntu-latest
     steps:

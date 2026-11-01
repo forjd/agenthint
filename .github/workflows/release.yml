@@ -144,7 +144,9 @@ jobs:
   native-binaries:
     name: Native Binaries
     needs: release
-    if: ${{ needs.release.outputs.native_release_created == 'true' }}
+    # Build binaries even if a package publish step fails, because the GitHub
+    # release already exists and install.sh needs its assets.
+    if: ${{ !cancelled() && needs.release.outputs.native_release_created == 'true' }}
     permissions:
       contents: write
     uses: ./.github/workflows/native-binaries.yml

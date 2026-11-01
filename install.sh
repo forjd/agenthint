@@ -84,11 +84,21 @@ is_truthy() {
 resolve_latest_native_tag() {
   releases_path="$tmp_dir/releases.json"
 
-  download "https://api.github.com/repos/$repo/releases" "$releases_path"
-  tag="$(awk -F '"' '/"tag_name": "agenthint-v/ { print $4; exit }' "$releases_path")"
+  download "https://api.github.com/repos/$repo/releases?per_page=100" "$releases_path"
+  # Pick the newest agenthint-v* release that has SHA256SUMS. That file is
+  # uploaded after every native binary, so a release that is still building
+  # or that has no binaries is skipped.
+  tag="$(awk '
+    match($0, /\/releases\/download\/agenthint-v[^\/"]*\/SHA256SUMS"/) {
+      prefix = length("/releases/download/")
+      suffix = length("/SHA256SUMS\"")
+      print substr($0, RSTART + prefix, RLENGTH - prefix - suffix)
+      exit
+    }
+  ' "$releases_path")"
 
   if [ -z "$tag" ]; then
-    echo "agenthint install: no agenthint-v* release found" >&2
+    echo "agenthint install: no agenthint-v* release with native binaries found" >&2
     exit 1
   fi
 

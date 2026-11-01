@@ -6,6 +6,14 @@ on:
       tag:
         description: GitHub release tag to upload assets to
         required: true
+  # release.yml calls this after release-please creates a release. Releases
+  # created with GITHUB_TOKEN do not trigger the `release` event below.
+  workflow_call:
+    inputs:
+      tag:
+        description: GitHub release tag to upload assets to
+        required: true
+        type: string
   release:
     types:
       - published
@@ -20,7 +28,7 @@ env:
 jobs:
   build:
     name: Build ${{ matrix.name }}
-    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'agenthint-v') }}
+    if: ${{ inputs.tag != '' || startsWith(github.event.release.tag_name, 'agenthint-v') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -54,10 +62,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install toolchains
-        uses: jdx/mise-action@v4
+        uses: jdx/mise-action@v5
         with:
           cache: true
 
@@ -101,19 +109,19 @@ jobs:
         run: gh release upload "$RELEASE_TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: checksum-${{ matrix.name }}
           path: dist/${{ matrix.asset }}.sha256
 
   checksums:
     name: Publish SHA256SUMS
-    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'agenthint-v') }}
+    if: ${{ inputs.tag != '' || startsWith(github.event.release.tag_name, 'agenthint-v') }}
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download checksum artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: checksum-*
           merge-multiple: true

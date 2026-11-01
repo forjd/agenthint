@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/forjd/agenthint/compare/v0.5.0...v0.5.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* build native binaries from the release tag and skip incomplete releases ([a2c862d](https://github.com/forjd/agenthint/commit/a2c862d617acd54786d06ba3353bdfa524284feb))
+* drop false-positive signals and match agent names case-insensitively ([3ddd49b](https://github.com/forjd/agenthint/commit/3ddd49b7b4d9442fbe706c67feb30547474c3066))
+
 ## [0.5.0](https://github.com/forjd/agenthint/compare/v0.4.2...v0.5.0) (2026-09-12)
 
 

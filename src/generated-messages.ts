@@ -33,7 +33,7 @@ export const MESSAGES = {
     agentHints: {
       codex:
         "Set AI_AGENT=codex in AGENTS.md instructions or the shell environment used for tool calls.",
-      "claude-code": "Set AI_AGENT=claude-code in a PreToolUse hook or shell wrapper.",
+      "claude-code": "Update Claude Code. Current versions set AI_AGENT themselves.",
       cursor: "Set AI_AGENT=cursor in Cursor agent hooks or workspace shell configuration.",
       gemini: "Set AI_AGENT=gemini in Gemini CLI hook or shell configuration.",
       copilot:

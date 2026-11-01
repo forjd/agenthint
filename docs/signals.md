@@ -20,13 +20,13 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 | `env:CODEX_CI` | `codex` | `0.92` | heuristic |
 | `env:CODEX_THREAD_ID` | `codex` | `0.92` | heuristic |
 | `env:CODEX_SANDBOX_NETWORK_DISABLED` | `codex` | `0.92` | heuristic |
-| `env:KILO` | `kilocode` | `0.92` | heuristic |
-| `env:KILO_PID` | `kilocode` | `0.92` | heuristic |
 | `env:AUGMENT_AGENT` | `augment-cli` | `0.90` | heuristic |
 | `env:AMP_CURRENT_THREAD_ID` | `amp` | `0.90` | heuristic |
+| `env:CLAUDE_CODE_CHILD_SESSION` | `claude-code` or `cowork` | `0.90` | heuristic |
+| `env:KILO` | `kilocode` | `0.90` | heuristic |
+| `env:KILO_PID` | `kilocode` | `0.90` | heuristic |
 | `env:OPENCODE` | `opencode` | `0.90` | heuristic |
 | `env:OPENCODE_PID` | `opencode` | `0.90` | heuristic |
-| `env:CLAUDE_CODE_CHILD_SESSION` | `claude-code` or `cowork` | `0.90` | heuristic |
 | `env:COPILOT_CLI` | `copilot` | `0.88` | heuristic |
 | `env:COPILOT_AGENT` | `copilot` | `0.88` | heuristic |
 | `env:REPL_ID` | `replit` | `0.65` | heuristic |
@@ -36,13 +36,13 @@ Detection is advisory. Signals describe why `agenthint` returned a result; they 
 | `env:CLINE_ACTIVE` | `cline` | `0.82` | heuristic |
 | `env:ROO_ACTIVE` | `roo-code` | `0.82` | heuristic |
 
-`CLAUDE_CODE_IS_COWORK` is only a classifier. It selects `cowork` when another Claude signal is present; it is not an agent signal by itself. When it selects `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` so the classification stays explainable.
+`CLAUDE_CODE_IS_COWORK` is only a classifier. It selects `cowork` when another Claude signal is present, including an `AI_AGENT` value that normalizes to `claude-code`; it is not an agent signal by itself. When it selects `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` so the classification stays explainable.
 
-Variables that people set in their own shell profile, or that an IDE sets for every terminal, are not agent signals. For that reason `agenthint` does not use `CODEX_HOME`, `COPILOT_GITHUB_TOKEN`, `AIDER_*` configuration variables, the `CURSOR_*` variables that the Cursor IDE sets in its integrated terminal (such as `CURSOR_TRACE_ID`), or `CLAUDECODE`, which Claude Code IDE extensions also set in their integrated terminals. Claude Code sets `CLAUDE_CODE_CHILD_SESSION` only for its own subprocesses. Aider is still detected through `AI_AGENT` or its parent process name.
+Variables that people set in their own shell profile, or that an IDE sets for every terminal, are not agent signals. For that reason `agenthint` does not use `CODEX_HOME`, `COPILOT_GITHUB_TOKEN`, `AIDER_*` configuration variables, the `CURSOR_*` variables that the Cursor IDE sets in its integrated terminal (such as `CURSOR_TRACE_ID`), or `CLAUDECODE`, which Claude Code IDE extensions also set in their integrated terminals. IDE extensions do not set `CLAUDE_CODE_CHILD_SESSION`; Claude Code sets it for the processes it starts, and their children inherit it. Aider is still detected through `AI_AGENT` or its parent process name.
 
-Kilo Code is built on opencode and also sets `OPENCODE`, so the `kilocode` rule has a higher confidence than the `opencode` rule.
+Kilo Code is built on opencode and also sets `OPENCODE`, so the `kilocode` rule comes before the `opencode` rule. Rules with equal confidence prefer the earlier rule.
 
-Several agents set `AI_AGENT` themselves: Claude Code (`claude-code_<version>_<surface>`), opencode (`opencode`), Pi (`pi`), and GitHub Copilot in VS Code (`github_copilot_vscode_agent`). These values normalize to `claude-code`, `opencode`, `pi`, and `copilot`.
+Several agents set `AI_AGENT` themselves: Claude Code (`claude-code_<version>_<surface>`), opencode (`opencode`), Pi (`pi`), and GitHub Copilot in VS Code (`github_copilot_vscode_agent`). These values normalize to `claude-code`, `opencode`, `pi`, and `copilot`. Claude Code uses the `agent` surface for model tool calls and `harness` for its own processes, such as hooks and the status line. Both normalize to `claude-code`.
 
 `REPL_ID` is present in every Replit workspace, including human-driven sessions, which is why it reports a low `0.65` confidence. Exit-code consumers that want to avoid false positives can read `confidence` from `agenthint --json` and apply their own threshold.
 

@@ -340,12 +340,27 @@ struct AgentMatch {
 
 fn from_ai_agent_env_var(env: &HashMap<String, String>) -> Option<AgentHintResult> {
     let agent = normalize_agent_name(env.get("AI_AGENT"))?;
+    let mut signals = vec!["env:AI_AGENT".to_string()];
+
+    // Claude Code sets AI_AGENT natively, so Cowork must be classified here too.
+    let agent = if agent == "claude-code" {
+        let cowork = present(env, &["CLAUDE_CODE_IS_COWORK"]);
+        let is_cowork = !cowork.is_empty();
+        signals.extend(cowork);
+        if is_cowork {
+            "cowork".to_string()
+        } else {
+            agent
+        }
+    } else {
+        agent
+    };
 
     Some(AgentHintResult {
         is_agent: true,
         agent: Some(agent),
         confidence: 0.98,
-        signals: vec!["env:AI_AGENT".to_string()],
+        signals,
     })
 }
 
@@ -511,16 +526,18 @@ fn normalize_agent_name(value: Option<&String>) -> Option<String> {
     // folded so every implementation agrees (see SPEC.md). Custom names keep
     // their original case.
     let lower = normalized.to_ascii_lowercase();
-    let prefixed = AGENT_PREFIXES
+    if let Some((_, agent)) = AGENT_PREFIXES
         .iter()
         .find(|(prefix, _)| lower.starts_with(prefix))
-        .map(|(_, agent)| *agent);
+    {
+        return Some((*agent).to_string());
+    }
+
     let agent = match lower.as_str() {
         "github-copilot" | "github-copilot-cli" => "copilot",
         "roo" => "roo-code",
-        "kilo-code" => "kilocode",
+        "kilo-code" | "kilo" => "kilocode",
         "vibe" => "mistral-vibe",
-        _ if prefixed.is_some() => prefixed.unwrap_or(normalized),
         _ if generated_rules::KNOWN_AGENTS.contains(&lower.as_str()) => lower.as_str(),
         _ => normalized,
     };

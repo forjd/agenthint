@@ -26,6 +26,7 @@ AGENT_ALIASES = {
     "roo": "roo-code",
     "kilo-code": "kilocode",
     "vibe": "mistral-vibe",
+    "kilo": "kilocode",
 }
 # Agents that set AI_AGENT natively add a version or surface after a separator,
 # for example `claude-code_2-1-316_agent` or `github_copilot_vscode_agent`.
@@ -243,7 +244,9 @@ def _from_ai_agent(env: Mapping[str, str]) -> AgentHintResult | None:
     if agent is None:
         return None
 
-    return AgentHintResult(True, agent, 0.98, ["env:AI_AGENT"])
+    # Claude Code sets AI_AGENT natively, so Cowork must be classified here too.
+    cowork = _present(env, ["CLAUDE_CODE_IS_COWORK"]) if agent == "claude-code" else []
+    return AgentHintResult(True, "cowork" if cowork else agent, 0.98, ["env:AI_AGENT", *cowork])
 
 
 def _detection_matches(env: Mapping[str, str]) -> list[dict[str, object]]:

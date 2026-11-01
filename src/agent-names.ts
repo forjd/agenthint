@@ -12,6 +12,7 @@ const AGENT_ALIASES: Readonly<Record<string, KnownAgent>> = {
   "github-copilot-cli": "copilot",
   roo: "roo-code",
   "kilo-code": "kilocode",
+  kilo: "kilocode",
   vibe: "mistral-vibe",
 };
 

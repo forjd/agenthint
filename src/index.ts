@@ -130,11 +130,14 @@ function fromAiAgentEnvVar(env: NodeJS.ProcessEnv): AgentHintResult | null {
     return null;
   }
 
+  // Claude Code sets AI_AGENT natively, so Cowork must be classified here too.
+  const cowork = agent === "claude-code" ? present(env, ["CLAUDE_CODE_IS_COWORK"]) : [];
+
   return {
     isAgent: true,
-    agent,
+    agent: cowork.length > 0 ? "cowork" : agent,
     confidence: 0.98,
-    signals: ["env:AI_AGENT"],
+    signals: ["env:AI_AGENT", ...cowork],
   };
 }
 

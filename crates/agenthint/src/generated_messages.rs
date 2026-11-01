@@ -37,7 +37,7 @@ pub(crate) const AGENT_HINTS: &[(&str, &str)] = &[
     ),
     (
         "claude-code",
-        "Set AI_AGENT=claude-code in a PreToolUse hook or shell wrapper.",
+        "Update Claude Code. Current versions set AI_AGENT themselves.",
     ),
     (
         "cursor",

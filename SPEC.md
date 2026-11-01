@@ -54,10 +54,10 @@ Known agent names and their aliases match case-insensitively and normalize to th
 | `claude-code/<anything>`, `claude-code_<anything>` | `claude-code` |
 | `github_copilot_<anything>` | `copilot` |
 | `roo` | `roo-code` |
-| `kilo-code` | `kilocode` |
+| `kilo-code`, `kilo` | `kilocode` |
 | `vibe` | `mistral-vibe` |
 
-Some agents set `AI_AGENT` themselves with a version or surface after the name. Claude Code sends `claude-code_<version>_<surface>`, for example `claude-code_2-1-316_agent`, and GitHub Copilot in VS Code sends `github_copilot_vscode_agent`.
+Some agents set `AI_AGENT` themselves with a version or surface after the name. Claude Code sends `claude-code_<version>_<surface>`, for example `claude-code_2-1-316_agent`, and GitHub Copilot in VS Code sends `github_copilot_vscode_agent`. The version and surface are not part of the result: Claude Code's `agent` (model tool calls) and `harness` (hooks, status line) surfaces both normalize to `claude-code`.
 
 The same normalization applies to `AGENTHINT_AGENT` and `agenthint init <name>`.
 
@@ -114,7 +114,7 @@ A variable that the agent sets with a different value for human-driven commands,
 
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
 
-`CLAUDE_CODE_IS_COWORK` is a classifier only. It may select `cowork` when another Claude signal is present, but should not be treated as an agent signal by itself. When it does select `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` to keep the classification explainable.
+`CLAUDE_CODE_IS_COWORK` is a classifier only. It may select `cowork` when another Claude signal is present, including an `AI_AGENT` value that normalizes to `claude-code`, but should not be treated as an agent signal by itself. When it does select `cowork`, `env:CLAUDE_CODE_IS_COWORK` is included in `signals` to keep the classification explainable.
 
 Stdio TTY hints such as `stdio:stdout-not-tty` are opt-in library signals only. They require an explicit `stdoutIsTTY: false` or `stdinIsTTY: false` option and must not mark the process as an agent. CLI defaults must not auto-report piped output as an agent signal.
 

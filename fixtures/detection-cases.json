@@ -64,6 +64,50 @@
     "signals": ["env:AI_AGENT"]
   },
   {
+    "name": "native prefixes match case-insensitively",
+    "env": { "AI_AGENT": "GitHub_Copilot_VSCode_Agent" },
+    "isAgent": true,
+    "agent": "copilot",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "github_copilot without a trailing separator is a custom name",
+    "env": { "AI_AGENT": "github_copilot" },
+    "isAgent": true,
+    "agent": "github_copilot",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "kilo alias",
+    "env": { "AI_AGENT": "kilo" },
+    "isAgent": true,
+    "agent": "kilocode",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "native Claude Code AI_AGENT with the Cowork classifier",
+    "env": {
+      "AI_AGENT": "claude-code_2-1-316_agent",
+      "CLAUDE_CODE_CHILD_SESSION": "1",
+      "CLAUDE_CODE_IS_COWORK": "1"
+    },
+    "isAgent": true,
+    "agent": "cowork",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT", "env:CLAUDE_CODE_IS_COWORK"]
+  },
+  {
+    "name": "Cowork classifier does not apply to other AI_AGENT values",
+    "env": { "AI_AGENT": "codex", "CLAUDE_CODE_IS_COWORK": "1" },
+    "isAgent": true,
+    "agent": "codex",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
     "name": "known AI_AGENT names match case-insensitively",
     "env": { "AI_AGENT": "Claude-Code" },
     "isAgent": true,
@@ -80,7 +124,7 @@
     "signals": ["env:AI_AGENT"]
   },
   {
-    "name": "claude alias needs a slash separator",
+    "name": "claude alias needs a separator after claude-code",
     "env": { "AI_AGENT": "claude-codex" },
     "isAgent": true,
     "agent": "claude-codex",
@@ -166,7 +210,10 @@
       "COPILOT_GITHUB_TOKEN": "token",
       "AIDER_MODEL": "sonnet",
       "CURSOR_TRACE_ID": "trace",
-      "CLAUDECODE": "1"
+      "CLAUDECODE": "1",
+      "OPENCODE_CLIENT": "cli",
+      "COPILOT_MODEL": "gpt-5",
+      "COPILOT_ALLOW_ALL": "true"
     },
     "isAgent": false,
     "agent": null,
@@ -244,8 +291,56 @@
     "env": { "OPENCODE": "1", "KILO": "1", "KILO_PID": "4242" },
     "isAgent": true,
     "agent": "kilocode",
-    "confidence": 0.92,
+    "confidence": 0.9,
     "signals": ["env:KILO", "env:KILO_PID", "env:OPENCODE"]
+  },
+  {
+    "name": "Claude Code wins a tie with Kilo Code",
+    "env": { "KILO": "1", "CLAUDE_CODE_CHILD_SESSION": "1" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.9,
+    "signals": ["env:CLAUDE_CODE_CHILD_SESSION", "env:KILO"]
+  },
+  {
+    "name": "opencode PID",
+    "env": { "OPENCODE_PID": "4242" },
+    "isAgent": true,
+    "agent": "opencode",
+    "confidence": 0.9,
+    "signals": ["env:OPENCODE_PID"]
+  },
+  {
+    "name": "Copilot agent terminal",
+    "env": { "COPILOT_AGENT": "1" },
+    "isAgent": true,
+    "agent": "copilot",
+    "confidence": 0.88,
+    "signals": ["env:COPILOT_AGENT"]
+  },
+  {
+    "name": "Windsurf Cascade terminal",
+    "env": { "WINDSURF_CASCADE_TERMINAL": "1" },
+    "isAgent": true,
+    "agent": "windsurf",
+    "confidence": 0.82,
+    "signals": ["env:WINDSURF_CASCADE_TERMINAL"]
+  },
+  {
+    "name": "Cline terminal",
+    "env": { "CLINE_ACTIVE": "true" },
+    "isAgent": true,
+    "agent": "cline",
+    "confidence": 0.82,
+    "signals": ["env:CLINE_ACTIVE"]
+  },
+  {
+    "name": "Roo Code terminal",
+    "env": { "ROO_ACTIVE": "true" },
+    "isAgent": true,
+    "agent": "roo-code",
+    "confidence": 0.82,
+    "signals": ["env:ROO_ACTIVE"]
   },
   {
     "name": "equal confidence tie prefers the earlier rule",
@@ -276,6 +371,14 @@
     "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "Cursor" },
     "isAgent": true,
     "agent": "cursor",
+    "confidence": 1,
+    "signals": ["env:AGENTHINT_FORCE"]
+  },
+  {
+    "name": "AGENTHINT_AGENT accepts native AI_AGENT formats",
+    "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "claude-code_2-1-316_agent" },
+    "isAgent": true,
+    "agent": "claude-code",
     "confidence": 1,
     "signals": ["env:AGENTHINT_FORCE"]
   },
@@ -320,6 +423,34 @@
     "agent": "aider",
     "confidence": 0.55,
     "signals": ["process:parent:aider"]
+  },
+  {
+    "name": "signals removed because current releases do not set them",
+    "env": {
+      "CLAUDE_CODE": "1",
+      "CLAUDECODE_CWD": "/tmp",
+      "CODEX_USER_AGENT": "codex",
+      "KIRO_AGENT_PATH": "/usr/local/bin/kiro",
+      "WINDSURF_AGENT": "1",
+      "CLINE_AGENT": "1",
+      "ROO_CODE_AGENT": "1",
+      "ROO_CODE": "1",
+      "KILOCODE_AGENT": "1",
+      "OPENCLAW_AGENT": "1"
+    },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 0,
+    "signals": []
+  },
+  {
+    "name": "cursor-agent parent process",
+    "env": {},
+    "parentProcessName": "/usr/local/bin/cursor-agent",
+    "isAgent": true,
+    "agent": "cursor",
+    "confidence": 0.55,
+    "signals": ["process:parent:cursor-agent"]
   },
   {
     "name": "the Cursor IDE process is not an agent parent",

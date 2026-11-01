@@ -80,6 +80,54 @@
     "signals": ["env:AI_AGENT"]
   },
   {
+    "name": "Roo alias matches case-insensitively",
+    "env": { "AI_AGENT": "Roo" },
+    "isAgent": true,
+    "agent": "roo-code",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "Kilo Code alias matches case-insensitively",
+    "env": { "AI_AGENT": "Kilo-Code" },
+    "isAgent": true,
+    "agent": "kilocode",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "Vibe alias matches case-insensitively",
+    "env": { "AI_AGENT": "VIBE" },
+    "isAgent": true,
+    "agent": "mistral-vibe",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "Copilot CLI alias matches case-insensitively",
+    "env": { "AI_AGENT": "GITHUB-COPILOT-CLI" },
+    "isAgent": true,
+    "agent": "copilot",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "claude alias prefix matches case-insensitively",
+    "env": { "AI_AGENT": "CLAUDE-CODE/2.1.123" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "AI_AGENT does not resolve object prototype names",
+    "env": { "AI_AGENT": "constructor" },
+    "isAgent": true,
+    "agent": "constructor",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
     "name": "AI_AGENT folds only ASCII letters",
     "env": { "AI_AGENT": "\u212aodex" },
     "isAgent": true,
@@ -107,6 +155,14 @@
     "agent": null,
     "confidence": 0,
     "signals": []
+  },
+  {
+    "name": "Cursor IDE variables do not add signals to a real Cursor agent",
+    "env": { "CURSOR_AGENT": "1", "CURSOR_TRACE_ID": "trace" },
+    "isAgent": true,
+    "agent": "cursor",
+    "confidence": 0.92,
+    "signals": ["env:CURSOR_AGENT"]
   },
   {
     "name": "ASCII whitespace-only heuristic values are ignored",
@@ -186,6 +242,14 @@
     "signals": ["env:AGENTHINT_FORCE"]
   },
   {
+    "name": "AGENTHINT_AGENT matches known names case-insensitively",
+    "env": { "AGENTHINT_FORCE": "1", "AGENTHINT_AGENT": "Cursor" },
+    "isAgent": true,
+    "agent": "cursor",
+    "confidence": 1,
+    "signals": ["env:AGENTHINT_FORCE"]
+  },
+  {
     "name": "disabled agent",
     "env": { "AGENTHINT_DISABLE": "1", "CODEX_CI": "1" },
     "isAgent": false,
@@ -217,5 +281,14 @@
     "agent": "codex",
     "confidence": 0.55,
     "signals": ["process:parent:codex"]
+  },
+  {
+    "name": "aider is detected from its parent process",
+    "env": {},
+    "parentProcessName": "/usr/local/bin/aider",
+    "isAgent": true,
+    "agent": "aider",
+    "confidence": 0.55,
+    "signals": ["process:parent:aider"]
   }
 ]

@@ -119,6 +119,7 @@ class AgentHintPythonTest(unittest.TestCase):
 
         self.assertIn("environmentRules", rules)
         self.assertIn("parentProcessRules", rules)
+        self.assertIn("knownAgents", rules)
 
 
 if __name__ == "__main__":

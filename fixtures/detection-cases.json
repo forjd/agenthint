@@ -48,6 +48,22 @@
     "signals": ["env:AI_AGENT"]
   },
   {
+    "name": "native Claude Code AI_AGENT value",
+    "env": { "AI_AGENT": "claude-code_2-1-316_agent" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "native GitHub Copilot AI_AGENT value",
+    "env": { "AI_AGENT": "github_copilot_vscode_agent" },
+    "isAgent": true,
+    "agent": "copilot",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
     "name": "known AI_AGENT names match case-insensitively",
     "env": { "AI_AGENT": "Claude-Code" },
     "isAgent": true,
@@ -149,7 +165,8 @@
       "CODEX_HOME": "/home/user/.codex",
       "COPILOT_GITHUB_TOKEN": "token",
       "AIDER_MODEL": "sonnet",
-      "CURSOR_TRACE_ID": "trace"
+      "CURSOR_TRACE_ID": "trace",
+      "CLAUDECODE": "1"
     },
     "isAgent": false,
     "agent": null,
@@ -166,7 +183,7 @@
   },
   {
     "name": "ASCII whitespace-only heuristic values are ignored",
-    "env": { "CODEX_CI": " \t\n\u000b\f\r", "CLAUDECODE": "  " },
+    "env": { "CODEX_CI": " \t\n\u000b\f\r", "CLAUDE_CODE_CHILD_SESSION": "  " },
     "isAgent": false,
     "agent": null,
     "confidence": 0,
@@ -178,36 +195,41 @@
       "CODEX_SANDBOX": "\ufeff",
       "CODEX_CI": "\u0085",
       "CODEX_THREAD_ID": "\u001c",
-      "CODEX_USER_AGENT": "\u00a0"
+      "CODEX_SANDBOX_NETWORK_DISABLED": "\u00a0"
     },
     "isAgent": true,
     "agent": "codex",
     "confidence": 0.92,
-    "signals": ["env:CODEX_SANDBOX", "env:CODEX_CI", "env:CODEX_THREAD_ID", "env:CODEX_USER_AGENT"]
+    "signals": [
+      "env:CODEX_SANDBOX",
+      "env:CODEX_CI",
+      "env:CODEX_THREAD_ID",
+      "env:CODEX_SANDBOX_NETWORK_DISABLED"
+    ]
   },
   {
     "name": "claude code env",
-    "env": { "CLAUDECODE": "1" },
+    "env": { "CLAUDE_CODE_CHILD_SESSION": "1" },
     "isAgent": true,
     "agent": "claude-code",
     "confidence": 0.9,
-    "signals": ["env:CLAUDECODE"]
+    "signals": ["env:CLAUDE_CODE_CHILD_SESSION"]
   },
   {
     "name": "cowork env",
-    "env": { "CLAUDE_CODE": "1", "CLAUDE_CODE_IS_COWORK": "1" },
+    "env": { "CLAUDE_CODE_CHILD_SESSION": "1", "CLAUDE_CODE_IS_COWORK": "1" },
     "isAgent": true,
     "agent": "cowork",
     "confidence": 0.9,
-    "signals": ["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
+    "signals": ["env:CLAUDE_CODE_CHILD_SESSION", "env:CLAUDE_CODE_IS_COWORK"]
   },
   {
     "name": "whitespace-only cowork classifier is ignored",
-    "env": { "CLAUDE_CODE": "1", "CLAUDE_CODE_IS_COWORK": " \t" },
+    "env": { "CLAUDE_CODE_CHILD_SESSION": "1", "CLAUDE_CODE_IS_COWORK": " \t" },
     "isAgent": true,
     "agent": "claude-code",
     "confidence": 0.9,
-    "signals": ["env:CLAUDE_CODE"]
+    "signals": ["env:CLAUDE_CODE_CHILD_SESSION"]
   },
   {
     "name": "cowork classifier alone is not an agent",
@@ -216,6 +238,14 @@
     "agent": null,
     "confidence": 0,
     "signals": []
+  },
+  {
+    "name": "Kilo Code wins over the OPENCODE variable it also sets",
+    "env": { "OPENCODE": "1", "KILO": "1", "KILO_PID": "4242" },
+    "isAgent": true,
+    "agent": "kilocode",
+    "confidence": 0.92,
+    "signals": ["env:KILO", "env:KILO_PID", "env:OPENCODE"]
   },
   {
     "name": "equal confidence tie prefers the earlier rule",
@@ -290,5 +320,14 @@
     "agent": "aider",
     "confidence": 0.55,
     "signals": ["process:parent:aider"]
+  },
+  {
+    "name": "the Cursor IDE process is not an agent parent",
+    "env": {},
+    "parentProcessName": "/usr/share/cursor/cursor",
+    "isAgent": false,
+    "agent": null,
+    "confidence": 0,
+    "signals": []
   }
 ]

@@ -70,16 +70,18 @@ describe("detectAgent", () => {
     assert.deepEqual(result.signals, ["env:CODEX_CI"]);
   });
 
-  it("detects Claude Code from CLAUDECODE", () => {
-    const result = detectAgent({ env: { CLAUDECODE: "1" } });
+  it("detects Claude Code from CLAUDE_CODE_CHILD_SESSION", () => {
+    const result = detectAgent({ env: { CLAUDE_CODE_CHILD_SESSION: "1" } });
 
     assert.equal(result.isAgent, true);
     assert.equal(result.agent, "claude-code");
-    assert.deepEqual(result.signals, ["env:CLAUDECODE"]);
+    assert.deepEqual(result.signals, ["env:CLAUDE_CODE_CHILD_SESSION"]);
   });
 
   it("detects Cowork only when a Claude signal is present", () => {
-    const cowork = detectAgent({ env: { CLAUDE_CODE: "1", CLAUDE_CODE_IS_COWORK: "1" } });
+    const cowork = detectAgent({
+      env: { CLAUDE_CODE_CHILD_SESSION: "1", CLAUDE_CODE_IS_COWORK: "1" },
+    });
     const notCowork = detectAgent({
       env: { CLAUDE_CODE_IS_COWORK: "1" },
       checkFilesystem: false,
@@ -110,17 +112,19 @@ describe("detectAgent", () => {
       ["gemini", { GEMINI_CLI: "true" }],
       ["augment-cli", { AUGMENT_AGENT: "true" }],
       ["amp", { AMP_CURRENT_THREAD_ID: "thread-id" }],
-      ["opencode", { OPENCODE_CLIENT: "true" }],
+      ["opencode", { OPENCODE: "1" }],
+      ["opencode", { OPENCODE_PID: "4242" }],
+      ["codex", { CODEX_SANDBOX_NETWORK_DISABLED: "1" }],
+      ["copilot", { COPILOT_AGENT: "1" }],
       ["copilot", { COPILOT_CLI: "1" }],
       ["replit", { REPL_ID: "repl-id" }],
       ["antigravity", { ANTIGRAVITY_AGENT: "1" }],
       ["pi", { PI_CODING_AGENT: "true" }],
-      ["kiro-cli", { KIRO_AGENT_PATH: "/usr/local/bin/kiro" }],
-      ["windsurf", { WINDSURF_AGENT: "1" }],
-      ["cline", { CLINE_AGENT: "1" }],
-      ["roo-code", { ROO_CODE_AGENT: "1" }],
-      ["kilocode", { KILOCODE_AGENT: "1" }],
-      ["openclaw", { OPENCLAW_AGENT: "1" }],
+      ["windsurf", { WINDSURF_CASCADE_TERMINAL: "1" }],
+      ["cline", { CLINE_ACTIVE: "true" }],
+      ["roo-code", { ROO_ACTIVE: "true" }],
+      ["kilocode", { KILO: "1" }],
+      ["kilocode", { KILO_PID: "4242" }],
     ];
 
     for (const [agent, env] of cases) {
@@ -192,8 +196,8 @@ describe("detectAgent", () => {
   });
 
   it("uses known environment priority order", () => {
-    const cursorWins = detectAgent({ env: { CURSOR_AGENT: "1", CLAUDECODE: "1" } });
-    const claudeWins = detectAgent({ env: { CLAUDECODE: "1", REPL_ID: "repl-id" } });
+    const cursorWins = detectAgent({ env: { CURSOR_AGENT: "1", CLAUDE_CODE_CHILD_SESSION: "1" } });
+    const claudeWins = detectAgent({ env: { CLAUDE_CODE_CHILD_SESSION: "1", REPL_ID: "repl-id" } });
     const strongerWins = detectAgent({ env: { REPL_ID: "repl-id", ANTIGRAVITY_AGENT: "1" } });
 
     assert.equal(cursorWins.agent, "cursor");

@@ -56,8 +56,13 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
             "CODEX_SANDBOX",
             "CODEX_CI",
             "CODEX_THREAD_ID",
-            "CODEX_USER_AGENT",
+            "CODEX_SANDBOX_NETWORK_DISABLED",
         ],
+    },
+    EnvironmentRule {
+        agent: "kilocode",
+        confidence: 0.92,
+        names: &["KILO", "KILO_PID"],
     },
     EnvironmentRule {
         agent: "augment-cli",
@@ -72,17 +77,17 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
     EnvironmentRule {
         agent: "opencode",
         confidence: 0.9,
-        names: &["OPENCODE_CLIENT", "OPENCODE"],
+        names: &["OPENCODE", "OPENCODE_PID"],
     },
     EnvironmentRule {
         agent: "claude-code",
         confidence: 0.9,
-        names: &["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"],
+        names: &["CLAUDE_CODE_CHILD_SESSION"],
     },
     EnvironmentRule {
         agent: "copilot",
         confidence: 0.88,
-        names: &["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_CLI"],
+        names: &["COPILOT_CLI", "COPILOT_AGENT"],
     },
     EnvironmentRule {
         agent: "replit",
@@ -100,34 +105,19 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
         names: &["PI_CODING_AGENT"],
     },
     EnvironmentRule {
-        agent: "kiro-cli",
-        confidence: 0.9,
-        names: &["KIRO_AGENT_PATH"],
-    },
-    EnvironmentRule {
         agent: "windsurf",
         confidence: 0.82,
-        names: &["WINDSURF_AGENT"],
+        names: &["WINDSURF_CASCADE_TERMINAL"],
     },
     EnvironmentRule {
         agent: "cline",
         confidence: 0.82,
-        names: &["CLINE_AGENT"],
+        names: &["CLINE_ACTIVE"],
     },
     EnvironmentRule {
         agent: "roo-code",
         confidence: 0.82,
-        names: &["ROO_CODE_AGENT", "ROO_CODE"],
-    },
-    EnvironmentRule {
-        agent: "kilocode",
-        confidence: 0.82,
-        names: &["KILOCODE_AGENT"],
-    },
-    EnvironmentRule {
-        agent: "openclaw",
-        confidence: 0.82,
-        names: &["OPENCLAW_AGENT"],
+        names: &["ROO_ACTIVE"],
     },
 ];
 
@@ -142,7 +132,7 @@ pub(crate) const PARENT_PROCESS_RULES: &[ParentProcessRule] = &[
     },
     ParentProcessRule {
         agent: "cursor",
-        names: &["cursor-agent", "cursor"],
+        names: &["cursor-agent"],
     },
     ParentProcessRule {
         agent: "gemini",

@@ -15,6 +15,15 @@ const AGENT_ALIASES: Readonly<Record<string, KnownAgent>> = {
   vibe: "mistral-vibe",
 };
 
+// Agents that set AI_AGENT natively add a version or surface after a
+// separator, for example `claude-code_2-1-316_agent` from Claude Code or
+// `github_copilot_vscode_agent` from VS Code.
+const AGENT_PREFIXES: ReadonlyArray<readonly [string, KnownAgent]> = [
+  ["claude-code/", "claude-code"],
+  ["claude-code_", "claude-code"],
+  ["github_copilot_", "copilot"],
+];
+
 // Known names and aliases match case-insensitively. Only ASCII letters are
 // folded so every implementation agrees (see SPEC.md). Custom names keep
 // their original case.
@@ -32,8 +41,10 @@ export function normalizeAgentName(value: string | undefined): AgentName | null 
     return alias;
   }
 
-  if (lower.startsWith("claude-code/")) {
-    return "claude-code";
+  const prefixed = AGENT_PREFIXES.find(([prefix]) => lower.startsWith(prefix));
+
+  if (prefixed != null) {
+    return prefixed[1];
   }
 
   if (KNOWN_AGENT_NAMES.has(lower)) {

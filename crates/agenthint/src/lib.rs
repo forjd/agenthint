@@ -492,6 +492,15 @@ fn is_truthy(value: Option<&String>) -> bool {
     value.is_some_and(|value| matches!(value.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
 }
 
+/// Agents that set `AI_AGENT` natively add a version or surface after a
+/// separator, for example `claude-code_2-1-316_agent` or
+/// `github_copilot_vscode_agent`.
+const AGENT_PREFIXES: &[(&str, &str)] = &[
+    ("claude-code/", "claude-code"),
+    ("claude-code_", "claude-code"),
+    ("github_copilot_", "copilot"),
+];
+
 fn normalize_agent_name(value: Option<&String>) -> Option<String> {
     let normalized = trim_whitespace(value?);
     if normalized.is_empty() {
@@ -502,12 +511,16 @@ fn normalize_agent_name(value: Option<&String>) -> Option<String> {
     // folded so every implementation agrees (see SPEC.md). Custom names keep
     // their original case.
     let lower = normalized.to_ascii_lowercase();
+    let prefixed = AGENT_PREFIXES
+        .iter()
+        .find(|(prefix, _)| lower.starts_with(prefix))
+        .map(|(_, agent)| *agent);
     let agent = match lower.as_str() {
         "github-copilot" | "github-copilot-cli" => "copilot",
         "roo" => "roo-code",
         "kilo-code" => "kilocode",
         "vibe" => "mistral-vibe",
-        _ if lower.starts_with("claude-code/") => "claude-code",
+        _ if prefixed.is_some() => prefixed.unwrap_or(normalized),
         _ if generated_rules::KNOWN_AGENTS.contains(&lower.as_str()) => lower.as_str(),
         _ => normalized,
     };
@@ -774,18 +787,20 @@ mod tests {
             ("codex", vec![("CODEX_CI", "1")]),
             ("augment-cli", vec![("AUGMENT_AGENT", "true")]),
             ("amp", vec![("AMP_CURRENT_THREAD_ID", "thread")]),
-            ("opencode", vec![("OPENCODE_CLIENT", "true")]),
-            ("claude-code", vec![("CLAUDECODE", "1")]),
+            ("opencode", vec![("OPENCODE", "1")]),
+            ("opencode", vec![("OPENCODE_PID", "4242")]),
+            ("codex", vec![("CODEX_SANDBOX_NETWORK_DISABLED", "1")]),
+            ("copilot", vec![("COPILOT_AGENT", "1")]),
+            ("claude-code", vec![("CLAUDE_CODE_CHILD_SESSION", "1")]),
             ("copilot", vec![("COPILOT_CLI", "1")]),
             ("replit", vec![("REPL_ID", "id")]),
             ("antigravity", vec![("ANTIGRAVITY_AGENT", "1")]),
             ("pi", vec![("PI_CODING_AGENT", "1")]),
-            ("kiro-cli", vec![("KIRO_AGENT_PATH", "/usr/local/bin/kiro")]),
-            ("windsurf", vec![("WINDSURF_AGENT", "1")]),
-            ("cline", vec![("CLINE_AGENT", "1")]),
-            ("roo-code", vec![("ROO_CODE_AGENT", "1")]),
-            ("kilocode", vec![("KILOCODE_AGENT", "1")]),
-            ("openclaw", vec![("OPENCLAW_AGENT", "1")]),
+            ("windsurf", vec![("WINDSURF_CASCADE_TERMINAL", "1")]),
+            ("cline", vec![("CLINE_ACTIVE", "true")]),
+            ("roo-code", vec![("ROO_ACTIVE", "true")]),
+            ("kilocode", vec![("KILO", "1")]),
+            ("kilocode", vec![("KILO_PID", "4242")]),
         ];
 
         for (agent, entries) in cases {
@@ -796,13 +811,16 @@ mod tests {
 
     #[test]
     fn detects_cowork_only_with_claude() {
-        let cowork = detect(env(&[("CLAUDE_CODE", "1"), ("CLAUDE_CODE_IS_COWORK", "1")]));
+        let cowork = detect(env(&[
+            ("CLAUDE_CODE_CHILD_SESSION", "1"),
+            ("CLAUDE_CODE_IS_COWORK", "1"),
+        ]));
         let not_cowork = detect(env(&[("CLAUDE_CODE_IS_COWORK", "1")]));
 
         assert_eq!(cowork.agent.as_deref(), Some("cowork"));
         assert_eq!(
             cowork.signals,
-            vec!["env:CLAUDE_CODE", "env:CLAUDE_CODE_IS_COWORK"]
+            vec!["env:CLAUDE_CODE_CHILD_SESSION", "env:CLAUDE_CODE_IS_COWORK"]
         );
         assert!(!not_cowork.is_agent);
     }
@@ -849,11 +867,11 @@ mod tests {
 
     #[test]
     fn formats_json_without_secret_values() {
-        let result = detect(env(&[("COPILOT_MODEL", "secret")]));
+        let result = detect(env(&[("COPILOT_CLI", "secret")]));
         let json = to_json(&result);
 
         assert!(json.contains("\"agent\": \"copilot\""));
-        assert!(json.contains("env:COPILOT_MODEL"));
+        assert!(json.contains("env:COPILOT_CLI"));
         assert!(!json.contains("secret"));
     }
 

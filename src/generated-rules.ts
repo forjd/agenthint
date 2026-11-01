@@ -43,7 +43,12 @@ export const ENVIRONMENT_RULES = [
   {
     agent: "codex",
     confidence: 0.92,
-    names: ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_USER_AGENT"],
+    names: ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX_NETWORK_DISABLED"],
+  },
+  {
+    agent: "kilocode",
+    confidence: 0.92,
+    names: ["KILO", "KILO_PID"],
   },
   {
     agent: "augment-cli",
@@ -58,17 +63,17 @@ export const ENVIRONMENT_RULES = [
   {
     agent: "opencode",
     confidence: 0.9,
-    names: ["OPENCODE_CLIENT", "OPENCODE"],
+    names: ["OPENCODE", "OPENCODE_PID"],
   },
   {
     agent: "claude-code",
     confidence: 0.9,
-    names: ["CLAUDECODE", "CLAUDE_CODE", "CLAUDECODE_CWD"],
+    names: ["CLAUDE_CODE_CHILD_SESSION"],
   },
   {
     agent: "copilot",
     confidence: 0.88,
-    names: ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_CLI"],
+    names: ["COPILOT_CLI", "COPILOT_AGENT"],
   },
   {
     agent: "replit",
@@ -86,34 +91,19 @@ export const ENVIRONMENT_RULES = [
     names: ["PI_CODING_AGENT"],
   },
   {
-    agent: "kiro-cli",
-    confidence: 0.9,
-    names: ["KIRO_AGENT_PATH"],
-  },
-  {
     agent: "windsurf",
     confidence: 0.82,
-    names: ["WINDSURF_AGENT"],
+    names: ["WINDSURF_CASCADE_TERMINAL"],
   },
   {
     agent: "cline",
     confidence: 0.82,
-    names: ["CLINE_AGENT"],
+    names: ["CLINE_ACTIVE"],
   },
   {
     agent: "roo-code",
     confidence: 0.82,
-    names: ["ROO_CODE_AGENT", "ROO_CODE"],
-  },
-  {
-    agent: "kilocode",
-    confidence: 0.82,
-    names: ["KILOCODE_AGENT"],
-  },
-  {
-    agent: "openclaw",
-    confidence: 0.82,
-    names: ["OPENCLAW_AGENT"],
+    names: ["ROO_ACTIVE"],
   },
 ] as const;
 
@@ -128,7 +118,7 @@ export const PARENT_PROCESS_RULES = [
   },
   {
     agent: "cursor",
-    names: ["cursor-agent", "cursor"],
+    names: ["cursor-agent"],
   },
   {
     agent: "gemini",

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/forjd/agenthint/compare/agenthint-v0.5.0...agenthint-v0.5.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* drop false-positive signals and match agent names case-insensitively ([3ddd49b](https://github.com/forjd/agenthint/commit/3ddd49b7b4d9442fbe706c67feb30547474c3066))
+
 ## [0.5.0](https://github.com/forjd/agenthint/compare/agenthint-v0.4.2...agenthint-v0.5.0) (2026-09-12)
 
 

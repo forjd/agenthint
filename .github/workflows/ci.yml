@@ -30,8 +30,17 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      # Installed here only, so the release and native-binary jobs do not
+      # download a tool they do not use.
       - name: Lint GitHub Actions workflows
-        run: actionlint
+        run: mise exec aqua:rhysd/actionlint@1.7.12 -- actionlint
+
+      - name: Check third-party actions are pinned to commit SHAs
+        run: |
+          if grep -nE '^\s*(-\s*)?uses:\s*[^.][^@]*@' .github/workflows/*.yml | grep -vE '@[0-9a-f]{40}(\s|$)'; then
+            echo "Pin the actions above to a full commit SHA." >&2
+            exit 1
+          fi
 
       - name: Check Cargo.lock is current
         run: cargo metadata --locked --format-version 1 > /dev/null

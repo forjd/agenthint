@@ -125,6 +125,13 @@
     "stdout": "AI_AGENT=claude-code\n\nUse this value in the environment used for agent tool calls.\n"
   },
   {
+    "name": "init accepts native AI_AGENT formats",
+    "args": ["init", "claude-code_2-1-316_agent"],
+    "env": {},
+    "status": 0,
+    "stdout": "AI_AGENT=claude-code\n\nUse this value in the environment used for agent tool calls.\n"
+  },
+  {
     "name": "init keeps dollar patterns in custom names",
     "args": ["init", "a$&b"],
     "env": {},

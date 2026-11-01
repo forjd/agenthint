@@ -32,11 +32,11 @@
       "confidence": 0.92,
       "names": ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX_NETWORK_DISABLED"]
     },
-    { "agent": "kilocode", "confidence": 0.92, "names": ["KILO", "KILO_PID"] },
     { "agent": "augment-cli", "confidence": 0.9, "names": ["AUGMENT_AGENT"] },
     { "agent": "amp", "confidence": 0.9, "names": ["AMP_CURRENT_THREAD_ID"] },
-    { "agent": "opencode", "confidence": 0.9, "names": ["OPENCODE", "OPENCODE_PID"] },
     { "agent": "claude-code", "confidence": 0.9, "names": ["CLAUDE_CODE_CHILD_SESSION"] },
+    { "agent": "kilocode", "confidence": 0.9, "names": ["KILO", "KILO_PID"] },
+    { "agent": "opencode", "confidence": 0.9, "names": ["OPENCODE", "OPENCODE_PID"] },
     { "agent": "copilot", "confidence": 0.88, "names": ["COPILOT_CLI", "COPILOT_AGENT"] },
     { "agent": "replit", "confidence": 0.65, "names": ["REPL_ID"] },
     { "agent": "antigravity", "confidence": 0.9, "names": ["ANTIGRAVITY_AGENT"] },

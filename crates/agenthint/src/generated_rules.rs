@@ -60,11 +60,6 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
         ],
     },
     EnvironmentRule {
-        agent: "kilocode",
-        confidence: 0.92,
-        names: &["KILO", "KILO_PID"],
-    },
-    EnvironmentRule {
         agent: "augment-cli",
         confidence: 0.9,
         names: &["AUGMENT_AGENT"],
@@ -75,14 +70,19 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
         names: &["AMP_CURRENT_THREAD_ID"],
     },
     EnvironmentRule {
-        agent: "opencode",
-        confidence: 0.9,
-        names: &["OPENCODE", "OPENCODE_PID"],
-    },
-    EnvironmentRule {
         agent: "claude-code",
         confidence: 0.9,
         names: &["CLAUDE_CODE_CHILD_SESSION"],
+    },
+    EnvironmentRule {
+        agent: "kilocode",
+        confidence: 0.9,
+        names: &["KILO", "KILO_PID"],
+    },
+    EnvironmentRule {
+        agent: "opencode",
+        confidence: 0.9,
+        names: &["OPENCODE", "OPENCODE_PID"],
     },
     EnvironmentRule {
         agent: "copilot",

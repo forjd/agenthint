@@ -46,11 +46,6 @@ export const ENVIRONMENT_RULES = [
     names: ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_SANDBOX_NETWORK_DISABLED"],
   },
   {
-    agent: "kilocode",
-    confidence: 0.92,
-    names: ["KILO", "KILO_PID"],
-  },
-  {
     agent: "augment-cli",
     confidence: 0.9,
     names: ["AUGMENT_AGENT"],
@@ -61,14 +56,19 @@ export const ENVIRONMENT_RULES = [
     names: ["AMP_CURRENT_THREAD_ID"],
   },
   {
-    agent: "opencode",
-    confidence: 0.9,
-    names: ["OPENCODE", "OPENCODE_PID"],
-  },
-  {
     agent: "claude-code",
     confidence: 0.9,
     names: ["CLAUDE_CODE_CHILD_SESSION"],
+  },
+  {
+    agent: "kilocode",
+    confidence: 0.9,
+    names: ["KILO", "KILO_PID"],
+  },
+  {
+    agent: "opencode",
+    confidence: 0.9,
+    names: ["OPENCODE", "OPENCODE_PID"],
   },
   {
     agent: "copilot",

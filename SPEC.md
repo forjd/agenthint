@@ -33,7 +33,7 @@ Tools and agents should prefer `AI_AGENT` when they can set an explicit runtime 
 
 ```sh
 AI_AGENT=codex my-tool
-AI_AGENT=claude-code/2.1.123/agent my-tool
+AI_AGENT=claude-code_2-1-316_agent my-tool
 AI_AGENT=my-custom-agent my-tool
 ```
 
@@ -51,10 +51,13 @@ Known agent names and their aliases match case-insensitively and normalize to th
 | --- | --- |
 | a known agent name, such as `Codex` | the lowercase name, such as `codex` |
 | `github-copilot`, `github-copilot-cli` | `copilot` |
-| `claude-code/<anything>` | `claude-code` |
+| `claude-code/<anything>`, `claude-code_<anything>` | `claude-code` |
+| `github_copilot_<anything>` | `copilot` |
 | `roo` | `roo-code` |
 | `kilo-code` | `kilocode` |
 | `vibe` | `mistral-vibe` |
+
+Some agents set `AI_AGENT` themselves with a version or surface after the name. Claude Code sends `claude-code_<version>_<surface>`, for example `claude-code_2-1-316_agent`, and GitHub Copilot in VS Code sends `github_copilot_vscode_agent`.
 
 The same normalization applies to `AGENTHINT_AGENT` and `agenthint init <name>`.
 
@@ -83,34 +86,31 @@ Initial candidates:
 - `CODEX_SANDBOX`
 - `CODEX_CI`
 - `CODEX_THREAD_ID`
-- `CODEX_USER_AGENT`
-- `CLAUDECODE`
-- `CLAUDE_CODE`
-- `CLAUDECODE_CWD`
+- `CODEX_SANDBOX_NETWORK_DISABLED`
+- `KILO`
+- `KILO_PID`
+- `CLAUDE_CODE_CHILD_SESSION`
 - `CURSOR_AGENT`
 - `GEMINI_CLI`
 - `AUGMENT_AGENT`
 - `AMP_CURRENT_THREAD_ID`
-- `OPENCODE_CLIENT`
 - `OPENCODE`
-- `COPILOT_MODEL`
-- `COPILOT_ALLOW_ALL`
+- `OPENCODE_PID`
 - `COPILOT_CLI`
+- `COPILOT_AGENT`
 - `REPL_ID`
 - `ANTIGRAVITY_AGENT`
 - `PI_CODING_AGENT`
-- `KIRO_AGENT_PATH`
-- `WINDSURF_AGENT`
-- `CLINE_AGENT`
-- `ROO_CODE_AGENT`
-- `ROO_CODE`
-- `KILOCODE_AGENT`
-- `OPENCLAW_AGENT`
+- `WINDSURF_CASCADE_TERMINAL`
+- `CLINE_ACTIVE`
+- `ROO_ACTIVE`
 - `AGENTHINT_FORCE`
 - `AGENTHINT_AGENT`
 - `AGENTHINT_DISABLE`
 
-Heuristic signals should be variables that an agent runtime sets for its own tool calls. Variables that people set in a shell profile (for example `CODEX_HOME`, `COPILOT_GITHUB_TOKEN`, or `AIDER_*` configuration) or that an IDE sets for every integrated terminal (for example `CURSOR_TRACE_ID`) must not be treated as agent signals.
+Heuristic signals should be variables that an agent runtime sets for its own tool calls. Variables that people set in a shell profile (for example `CODEX_HOME`, `COPILOT_GITHUB_TOKEN`, or `AIDER_*` configuration) or that an IDE sets for every integrated terminal (for example `CURSOR_TRACE_ID`, or `CLAUDECODE`, which Claude Code IDE extensions set in their integrated terminals) must not be treated as agent signals.
+
+A variable that the agent sets with a different value for human-driven commands, such as `OPENCLAW_SHELL`, needs a value check. The rule registry matches names only, so such variables are not used yet.
 
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
 
@@ -121,7 +121,9 @@ Stdio TTY hints such as `stdio:stdout-not-tty` are opt-in library signals only. 
 Known agent names without stable heuristic signals should still be supported through `AI_AGENT`.
 Current explicit-only known names:
 
+- `kiro-cli`
 - `mistral-vibe`
+- `openclaw`
 - `v0`
 
 ## Known Filesystem Signals

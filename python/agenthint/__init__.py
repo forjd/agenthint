@@ -27,6 +27,13 @@ AGENT_ALIASES = {
     "kilo-code": "kilocode",
     "vibe": "mistral-vibe",
 }
+# Agents that set AI_AGENT natively add a version or surface after a separator,
+# for example `claude-code_2-1-316_agent` or `github_copilot_vscode_agent`.
+AGENT_PREFIXES = (
+    ("claude-code/", "claude-code"),
+    ("claude-code_", "claude-code"),
+    ("github_copilot_", "copilot"),
+)
 
 
 @dataclass(frozen=True)
@@ -322,8 +329,9 @@ def _normalize_agent_name(value: str | None) -> str | None:
     lower = normalized.translate(ASCII_LOWERCASE)
     if lower in AGENT_ALIASES:
         return AGENT_ALIASES[lower]
-    if lower.startswith("claude-code/"):
-        return "claude-code"
+    for prefix, agent in AGENT_PREFIXES:
+        if lower.startswith(prefix):
+            return agent
     if lower in _rules()["knownAgents"]:
         return lower
     return normalized

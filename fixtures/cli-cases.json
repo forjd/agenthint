@@ -118,6 +118,13 @@
     "stdout": "AI_AGENT=roo-code\n\nUse this value in the environment used for agent tool calls.\n"
   },
   {
+    "name": "init matches known names case-insensitively",
+    "args": ["init", "Claude-Code"],
+    "env": {},
+    "status": 0,
+    "stdout": "AI_AGENT=claude-code\n\nUse this value in the environment used for agent tool calls.\n"
+  },
+  {
     "name": "init keeps dollar patterns in custom names",
     "args": ["init", "a$&b"],
     "env": {},

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/forjd/agenthint/compare/agenthint-v0.5.1...agenthint-v0.5.2) (2026-11-01)
+
+
+### Bug Fixes
+
+* classify Cowork from native AI_AGENT and address review findings ([530263d](https://github.com/forjd/agenthint/commit/530263dc19a22103ad71bb75303a0c4d8fdb0a65))
+* refresh agent signals from current vendor sources ([06d3b48](https://github.com/forjd/agenthint/commit/06d3b48b9b9df0f7e6dcb721de72c22c422062b9))
+
 ## [0.5.1](https://github.com/forjd/agenthint/compare/agenthint-v0.5.0...agenthint-v0.5.1) (2026-11-01)
 
 

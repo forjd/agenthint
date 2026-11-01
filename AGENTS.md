@@ -42,6 +42,8 @@ Run `npm run check` before committing or handing off code changes.
 
 If editing `install.sh`, run `sh -n install.sh` and keep it POSIX `sh` compatible.
 
+If editing `.github/workflows/`, run `mise exec aqua:rhysd/actionlint@1.7.12 -- actionlint` and pin third-party actions to a full commit SHA with a version comment.
+
 ## Code Style
 
 - TypeScript source lives in `src/`.

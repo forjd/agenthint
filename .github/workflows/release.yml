@@ -28,18 +28,18 @@ jobs:
       - name: Run release-please
         if: ${{ github.event_name == 'push' }}
         id: release
-        uses: googleapis/release-please-action@v5
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           config-file: .github/release-please-config.json
           manifest-file: .release-please-manifest.json
 
       - name: Checkout
         if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install toolchains
         if: ${{ github.event_name != 'push' || steps.release.outputs.releases_created == 'true' }}
-        uses: jdx/mise-action@v5
+        uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
         with:
           cache: true
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Publish Python package with trusted publishing
         if: ${{ (github.event_name != 'push' || steps.release.outputs.releases_created == 'true') && steps.pypi.outputs.publish == 'true' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           packages-dir: dist-python
 
@@ -133,7 +133,7 @@ jobs:
       - name: Request crates.io trusted publishing token
         if: ${{ (github.event_name != 'push' || steps.release.outputs.releases_created == 'true') && steps.crate.outputs.publish == 'true' }}
         id: cargo-auth
-        uses: rust-lang/crates-io-auth-action@v1
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
 
       - name: Publish Rust crate with trusted publishing
         if: ${{ (github.event_name != 'push' || steps.release.outputs.releases_created == 'true') && steps.crate.outputs.publish == 'true' }}

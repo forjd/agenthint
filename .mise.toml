@@ -2,3 +2,4 @@
 node = "lts"
 rust = "stable"
 python = "3.12"
+actionlint = "1.7.12"

@@ -24,8 +24,6 @@ export type GeneratedKnownAgent = (typeof KNOWN_AGENTS)[number];
 
 export const ENVIRONMENT_RULES = ${JSON.stringify(rules.environmentRules, null, 2)} as const;
 
-export const PREFIX_RULES = ${JSON.stringify(rules.prefixRules, null, 2)} as const;
-
 export const PARENT_PROCESS_RULES = ${JSON.stringify(rules.parentProcessRules, null, 2)} as const;
 `,
 );
@@ -75,11 +73,6 @@ const rustEnvRules = rules.environmentRules
     return `    EnvironmentRule { agent: ${rustString(rule.agent)}, confidence: ${rule.confidence}, names: ${rustStringArray(rule.names)} },`;
   })
   .join("\n");
-const rustPrefixRules = rules.prefixRules
-  .map((rule) => {
-    return `    PrefixRule { agent: ${rustString(rule.agent)}, confidence: ${rule.confidence}, prefix: ${rustString(rule.prefix)} },`;
-  })
-  .join("\n");
 const rustParentRules = rules.parentProcessRules
   .map((rule) => {
     return `    ParentProcessRule { agent: ${rustString(rule.agent)}, names: ${rustStringArray(rule.names)} },`;
@@ -97,23 +90,15 @@ pub(crate) struct EnvironmentRule {
     pub(crate) names: &'static [&'static str],
 }
 
-pub(crate) struct PrefixRule {
-    pub(crate) agent: &'static str,
-    pub(crate) confidence: f32,
-    pub(crate) prefix: &'static str,
-}
-
 pub(crate) struct ParentProcessRule {
     pub(crate) agent: &'static str,
     pub(crate) names: &'static [&'static str],
 }
 
+pub(crate) const KNOWN_AGENTS: &[&str] = ${rustStringArray(rules.knownAgents)};
+
 pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
 ${rustEnvRules}
-];
-
-pub(crate) const PREFIX_RULES: &[PrefixRule] = &[
-${rustPrefixRules}
 ];
 
 pub(crate) const PARENT_PROCESS_RULES: &[ParentProcessRule] = &[

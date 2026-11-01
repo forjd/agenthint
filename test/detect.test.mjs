@@ -50,13 +50,24 @@ describe("detectAgent", () => {
     assert.equal(claude.agent, "claude-code");
   });
 
-  it("detects Codex from CODEX_HOME", () => {
-    const result = detectAgent({ env: { CODEX_HOME: "/tmp/codex" } });
+  it("matches known AI_AGENT names case-insensitively", () => {
+    const agent = (value) => detectAgent({ env: { AI_AGENT: value } }).agent;
+
+    assert.equal(agent("Claude-Code"), "claude-code");
+    assert.equal(agent("CLAUDE-CODE/2.1.123"), "claude-code");
+    assert.equal(agent("GitHub-Copilot"), "copilot");
+    assert.equal(agent("Codex"), "codex");
+    assert.equal(agent("claude-codex"), "claude-codex");
+    assert.equal(agent("My-Agent"), "My-Agent");
+  });
+
+  it("detects Codex from CODEX_CI", () => {
+    const result = detectAgent({ env: { CODEX_CI: "1" } });
 
     assert.equal(result.isAgent, true);
     assert.equal(result.agent, "codex");
     assert.equal(result.confidence, 0.92);
-    assert.deepEqual(result.signals, ["env:CODEX_HOME"]);
+    assert.deepEqual(result.signals, ["env:CODEX_CI"]);
   });
 
   it("detects Claude Code from CLAUDECODE", () => {
@@ -80,12 +91,17 @@ describe("detectAgent", () => {
     assert.equal(notCowork.isAgent, false);
   });
 
-  it("detects Aider from AIDER-prefixed environment variables", () => {
-    const result = detectAgent({ env: { AIDER_MODEL: "sonnet" } });
+  it("ignores user configuration and IDE variables", () => {
+    for (const name of ["CODEX_HOME", "COPILOT_GITHUB_TOKEN", "AIDER_MODEL", "CURSOR_TRACE_ID"]) {
+      const result = detectAgent({
+        env: { [name]: "1" },
+        checkFilesystem: false,
+        checkParentProcess: false,
+      });
 
-    assert.equal(result.isAgent, true);
-    assert.equal(result.agent, "aider");
-    assert.deepEqual(result.signals, ["env:AIDER_MODEL"]);
+      assert.equal(result.isAgent, false, name);
+      assert.deepEqual(result.signals, [], name);
+    }
   });
 
   it("detects additional known agent environment signals", () => {
@@ -196,7 +212,7 @@ describe("detectAgent", () => {
   });
 
   it("lets AGENTHINT_DISABLE override other signals", () => {
-    const result = detectAgent({ env: { AGENTHINT_DISABLE: "1", CODEX_HOME: "/tmp/codex" } });
+    const result = detectAgent({ env: { AGENTHINT_DISABLE: "1", CODEX_CI: "1" } });
 
     assert.equal(result.isAgent, false);
     assert.equal(result.agent, null);

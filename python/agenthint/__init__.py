@@ -18,6 +18,15 @@ PARENT_CONFIDENCE = 0.55
 # Native trim functions disagree on non-ASCII whitespace, so every
 # implementation trims this exact ASCII set instead (see SPEC.md).
 WHITESPACE = " \t\n\v\f\r"
+# Only ASCII letters are folded so every implementation agrees (see SPEC.md).
+ASCII_LOWERCASE = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
+AGENT_ALIASES = {
+    "github-copilot": "copilot",
+    "github-copilot-cli": "copilot",
+    "roo": "roo-code",
+    "kilo-code": "kilocode",
+    "vibe": "mistral-vibe",
+}
 
 
 @dataclass(frozen=True)
@@ -245,11 +254,6 @@ def _detection_matches(env: Mapping[str, str]) -> list[dict[str, object]]:
                     signals = signals + cowork_signals
             matches.append({"agent": agent, "confidence": rule["confidence"], "signals": signals})
 
-    for rule in rules["prefixRules"]:
-        signals = _prefix_present(env, rule["prefix"])
-        if signals:
-            matches.append({"agent": rule["agent"], "confidence": rule["confidence"], "signals": signals})
-
     return matches
 
 
@@ -301,12 +305,6 @@ def _present(env: Mapping[str, str], names: list[str]) -> list[str]:
     return [f"env:{name}" for name in names if _has_value(env.get(name))]
 
 
-def _prefix_present(env: Mapping[str, str], prefix: str) -> list[str]:
-    return sorted(
-        f"env:{_normalize_text(name)}" for name, value in env.items() if name.startswith(prefix) and _has_value(value)
-    )
-
-
 def _has_value(value: str | None) -> bool:
     return value is not None and trim_whitespace(value) != ""
 
@@ -320,16 +318,14 @@ def _normalize_agent_name(value: str | None) -> str | None:
     if not normalized:
         return None
 
-    if normalized in {"github-copilot", "github-copilot-cli"}:
-        return "copilot"
-    if normalized.startswith("claude-code"):
+    # Known names and aliases match case-insensitively. Custom names keep their case.
+    lower = normalized.translate(ASCII_LOWERCASE)
+    if lower in AGENT_ALIASES:
+        return AGENT_ALIASES[lower]
+    if lower.startswith("claude-code/"):
         return "claude-code"
-    if normalized in {"roo", "roo-code"}:
-        return "roo-code"
-    if normalized in {"kilo-code", "kilocode"}:
-        return "kilocode"
-    if normalized in {"mistral-vibe", "vibe"}:
-        return "mistral-vibe"
+    if lower in _rules()["knownAgents"]:
+        return lower
     return normalized
 
 

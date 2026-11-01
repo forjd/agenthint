@@ -7,16 +7,36 @@ pub(crate) struct EnvironmentRule {
     pub(crate) names: &'static [&'static str],
 }
 
-pub(crate) struct PrefixRule {
-    pub(crate) agent: &'static str,
-    pub(crate) confidence: f32,
-    pub(crate) prefix: &'static str,
-}
-
 pub(crate) struct ParentProcessRule {
     pub(crate) agent: &'static str,
     pub(crate) names: &'static [&'static str],
 }
+
+pub(crate) const KNOWN_AGENTS: &[&str] = &[
+    "codex",
+    "claude-code",
+    "cowork",
+    "aider",
+    "cursor",
+    "gemini",
+    "augment-cli",
+    "amp",
+    "opencode",
+    "copilot",
+    "replit",
+    "devin",
+    "antigravity",
+    "pi",
+    "kiro-cli",
+    "windsurf",
+    "cline",
+    "roo-code",
+    "kilocode",
+    "openclaw",
+    "mistral-vibe",
+    "v0",
+    "unknown",
+];
 
 pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
     EnvironmentRule {
@@ -36,7 +56,6 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
             "CODEX_SANDBOX",
             "CODEX_CI",
             "CODEX_THREAD_ID",
-            "CODEX_HOME",
             "CODEX_USER_AGENT",
         ],
     },
@@ -63,12 +82,7 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
     EnvironmentRule {
         agent: "copilot",
         confidence: 0.88,
-        names: &[
-            "COPILOT_MODEL",
-            "COPILOT_ALLOW_ALL",
-            "COPILOT_GITHUB_TOKEN",
-            "COPILOT_CLI",
-        ],
+        names: &["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_CLI"],
     },
     EnvironmentRule {
         agent: "replit",
@@ -114,19 +128,6 @@ pub(crate) const ENVIRONMENT_RULES: &[EnvironmentRule] = &[
         agent: "openclaw",
         confidence: 0.82,
         names: &["OPENCLAW_AGENT"],
-    },
-];
-
-pub(crate) const PREFIX_RULES: &[PrefixRule] = &[
-    PrefixRule {
-        agent: "aider",
-        confidence: 0.86,
-        prefix: "AIDER_",
-    },
-    PrefixRule {
-        agent: "cursor",
-        confidence: 0.82,
-        prefix: "CURSOR_",
     },
 ];
 

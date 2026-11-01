@@ -374,10 +374,6 @@ fn detection_matches(env: &HashMap<String, String>) -> Vec<AgentMatch> {
         });
     }
 
-    for rule in generated_rules::PREFIX_RULES {
-        push_prefix(&mut matches, env, rule.agent, rule.confidence, rule.prefix);
-    }
-
     matches
 }
 
@@ -466,40 +462,12 @@ fn agent_from_process_name(name: &str) -> Option<&'static str> {
         .map(|rule| rule.agent)
 }
 
-fn push_prefix(
-    matches: &mut Vec<AgentMatch>,
-    env: &HashMap<String, String>,
-    agent: &str,
-    confidence: f32,
-    prefix: &str,
-) {
-    let signals = prefix_present(env, prefix);
-    if !signals.is_empty() {
-        matches.push(AgentMatch {
-            agent: agent.to_string(),
-            confidence,
-            signals,
-        });
-    }
-}
-
 fn present(env: &HashMap<String, String>, names: &[&str]) -> Vec<String> {
     names
         .iter()
         .filter(|name| env.get(**name).is_some_and(|value| has_value(value)))
         .map(|name| format!("env:{name}"))
         .collect()
-}
-
-fn prefix_present(env: &HashMap<String, String>, prefix: &str) -> Vec<String> {
-    let mut signals = env
-        .iter()
-        .filter(|(name, value)| name.starts_with(prefix) && has_value(value))
-        .map(|(name, _)| format!("env:{name}"))
-        .collect::<Vec<_>>();
-
-    signals.sort();
-    signals
 }
 
 fn has_value(value: &str) -> bool {
@@ -530,14 +498,21 @@ fn normalize_agent_name(value: Option<&String>) -> Option<String> {
         return None;
     }
 
-    match normalized {
-        "github-copilot" | "github-copilot-cli" => Some("copilot".to_string()),
-        "roo" | "roo-code" => Some("roo-code".to_string()),
-        "kilo-code" | "kilocode" => Some("kilocode".to_string()),
-        "mistral-vibe" | "vibe" => Some("mistral-vibe".to_string()),
-        _ if normalized.starts_with("claude-code") => Some("claude-code".to_string()),
-        _ => Some(normalized.to_string()),
-    }
+    // Known names and aliases match case-insensitively. Only ASCII letters are
+    // folded so every implementation agrees (see SPEC.md). Custom names keep
+    // their original case.
+    let lower = normalized.to_ascii_lowercase();
+    let agent = match lower.as_str() {
+        "github-copilot" | "github-copilot-cli" => "copilot",
+        "roo" => "roo-code",
+        "kilo-code" => "kilocode",
+        "vibe" => "mistral-vibe",
+        _ if lower.starts_with("claude-code/") => "claude-code",
+        _ if generated_rules::KNOWN_AGENTS.contains(&lower.as_str()) => lower.as_str(),
+        _ => normalized,
+    };
+
+    Some(agent.to_string())
 }
 
 fn setup_hint(agent: &str) -> String {
@@ -751,6 +726,18 @@ mod tests {
     }
 
     #[test]
+    fn matches_known_names_case_insensitively() {
+        let agent = |value: &str| detect(env(&[("AI_AGENT", value)])).agent;
+
+        assert_eq!(agent("Claude-Code").as_deref(), Some("claude-code"));
+        assert_eq!(agent("CLAUDE-CODE/2.1.123").as_deref(), Some("claude-code"));
+        assert_eq!(agent("GitHub-Copilot").as_deref(), Some("copilot"));
+        assert_eq!(agent("Codex").as_deref(), Some("codex"));
+        assert_eq!(agent("claude-codex").as_deref(), Some("claude-codex"));
+        assert_eq!(agent("My-Agent").as_deref(), Some("My-Agent"));
+    }
+
+    #[test]
     fn detects_known_parent_process_names() {
         let result = detect_agent_with_options(DetectAgentOptions {
             env: HashMap::new(),
@@ -790,7 +777,6 @@ mod tests {
             ("opencode", vec![("OPENCODE_CLIENT", "true")]),
             ("claude-code", vec![("CLAUDECODE", "1")]),
             ("copilot", vec![("COPILOT_CLI", "1")]),
-            ("aider", vec![("AIDER_MODEL", "sonnet")]),
             ("replit", vec![("REPL_ID", "id")]),
             ("antigravity", vec![("ANTIGRAVITY_AGENT", "1")]),
             ("pi", vec![("PI_CODING_AGENT", "1")]),
@@ -835,10 +821,7 @@ mod tests {
             ("AGENTHINT_FORCE", "true"),
             ("AGENTHINT_AGENT", "cursor"),
         ]));
-        let disabled = detect(env(&[
-            ("AGENTHINT_DISABLE", "1"),
-            ("CODEX_HOME", "/tmp/codex"),
-        ]));
+        let disabled = detect(env(&[("AGENTHINT_DISABLE", "1"), ("CODEX_CI", "1")]));
 
         assert_eq!(forced.agent.as_deref(), Some("cursor"));
         assert_eq!(forced.confidence, 1.0);
@@ -866,11 +849,11 @@ mod tests {
 
     #[test]
     fn formats_json_without_secret_values() {
-        let result = detect(env(&[("COPILOT_GITHUB_TOKEN", "secret")]));
+        let result = detect(env(&[("COPILOT_MODEL", "secret")]));
         let json = to_json(&result);
 
         assert!(json.contains("\"agent\": \"copilot\""));
-        assert!(json.contains("env:COPILOT_GITHUB_TOKEN"));
+        assert!(json.contains("env:COPILOT_MODEL"));
         assert!(!json.contains("secret"));
     }
 
@@ -888,17 +871,18 @@ mod tests {
     }
 
     #[test]
-    fn prefix_signals_are_sorted() {
-        let result = detect(env(&[
-            ("AIDER_ZZZ", "1"),
-            ("AIDER_MODEL", "sonnet"),
-            ("AIDER_AAA", "1"),
-        ]));
+    fn ignores_user_configuration_variables() {
+        for name in [
+            "CODEX_HOME",
+            "COPILOT_GITHUB_TOKEN",
+            "AIDER_MODEL",
+            "CURSOR_TRACE_ID",
+        ] {
+            let result = detect(env(&[(name, "1")]));
 
-        assert_eq!(
-            result.signals,
-            vec!["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]
-        );
+            assert!(!result.is_agent, "{name} should not mark an agent");
+            assert!(result.signals.is_empty());
+        }
     }
 
     #[test]

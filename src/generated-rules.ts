@@ -43,7 +43,7 @@ export const ENVIRONMENT_RULES = [
   {
     agent: "codex",
     confidence: 0.92,
-    names: ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_HOME", "CODEX_USER_AGENT"],
+    names: ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_USER_AGENT"],
   },
   {
     agent: "augment-cli",
@@ -68,7 +68,7 @@ export const ENVIRONMENT_RULES = [
   {
     agent: "copilot",
     confidence: 0.88,
-    names: ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_GITHUB_TOKEN", "COPILOT_CLI"],
+    names: ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_CLI"],
   },
   {
     agent: "replit",
@@ -114,19 +114,6 @@ export const ENVIRONMENT_RULES = [
     agent: "openclaw",
     confidence: 0.82,
     names: ["OPENCLAW_AGENT"],
-  },
-] as const;
-
-export const PREFIX_RULES = [
-  {
-    agent: "aider",
-    confidence: 0.86,
-    prefix: "AIDER_",
-  },
-  {
-    agent: "cursor",
-    confidence: 0.82,
-    prefix: "CURSOR_",
   },
 ] as const;
 

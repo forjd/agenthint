@@ -30,7 +30,7 @@
     {
       "agent": "codex",
       "confidence": 0.92,
-      "names": ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_HOME", "CODEX_USER_AGENT"]
+      "names": ["CODEX_SANDBOX", "CODEX_CI", "CODEX_THREAD_ID", "CODEX_USER_AGENT"]
     },
     { "agent": "augment-cli", "confidence": 0.9, "names": ["AUGMENT_AGENT"] },
     { "agent": "amp", "confidence": 0.9, "names": ["AMP_CURRENT_THREAD_ID"] },
@@ -43,7 +43,7 @@
     {
       "agent": "copilot",
       "confidence": 0.88,
-      "names": ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_GITHUB_TOKEN", "COPILOT_CLI"]
+      "names": ["COPILOT_MODEL", "COPILOT_ALLOW_ALL", "COPILOT_CLI"]
     },
     { "agent": "replit", "confidence": 0.65, "names": ["REPL_ID"] },
     { "agent": "antigravity", "confidence": 0.9, "names": ["ANTIGRAVITY_AGENT"] },
@@ -54,10 +54,6 @@
     { "agent": "roo-code", "confidence": 0.82, "names": ["ROO_CODE_AGENT", "ROO_CODE"] },
     { "agent": "kilocode", "confidence": 0.82, "names": ["KILOCODE_AGENT"] },
     { "agent": "openclaw", "confidence": 0.82, "names": ["OPENCLAW_AGENT"] }
-  ],
-  "prefixRules": [
-    { "agent": "aider", "confidence": 0.86, "prefix": "AIDER_" },
-    { "agent": "cursor", "confidence": 0.82, "prefix": "CURSOR_" }
   ],
   "parentProcessRules": [
     { "agent": "codex", "names": ["codex"] },

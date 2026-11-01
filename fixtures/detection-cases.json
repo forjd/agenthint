@@ -48,16 +48,69 @@
     "signals": ["env:AI_AGENT"]
   },
   {
+    "name": "known AI_AGENT names match case-insensitively",
+    "env": { "AI_AGENT": "Claude-Code" },
+    "isAgent": true,
+    "agent": "claude-code",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "AI_AGENT aliases match case-insensitively",
+    "env": { "AI_AGENT": "GitHub-Copilot" },
+    "isAgent": true,
+    "agent": "copilot",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "claude alias needs a slash separator",
+    "env": { "AI_AGENT": "claude-codex" },
+    "isAgent": true,
+    "agent": "claude-codex",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "custom AI_AGENT names keep their case",
+    "env": { "AI_AGENT": "My-Agent" },
+    "isAgent": true,
+    "agent": "My-Agent",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
+    "name": "AI_AGENT folds only ASCII letters",
+    "env": { "AI_AGENT": "\u212aodex" },
+    "isAgent": true,
+    "agent": "\u212aodex",
+    "confidence": 0.98,
+    "signals": ["env:AI_AGENT"]
+  },
+  {
     "name": "codex env",
-    "env": { "CODEX_HOME": "/tmp/codex" },
+    "env": { "CODEX_CI": "1" },
     "isAgent": true,
     "agent": "codex",
     "confidence": 0.92,
-    "signals": ["env:CODEX_HOME"]
+    "signals": ["env:CODEX_CI"]
+  },
+  {
+    "name": "user configuration and IDE variables are not agent signals",
+    "env": {
+      "CODEX_HOME": "/home/user/.codex",
+      "COPILOT_GITHUB_TOKEN": "token",
+      "AIDER_MODEL": "sonnet",
+      "CURSOR_TRACE_ID": "trace"
+    },
+    "isAgent": false,
+    "agent": null,
+    "confidence": 0,
+    "signals": []
   },
   {
     "name": "ASCII whitespace-only heuristic values are ignored",
-    "env": { "CODEX_HOME": " \t\n\u000b\f\r", "AIDER_MODEL": "  " },
+    "env": { "CODEX_CI": " \t\n\u000b\f\r", "CLAUDECODE": "  " },
     "isAgent": false,
     "agent": null,
     "confidence": 0,
@@ -69,12 +122,12 @@
       "CODEX_SANDBOX": "\ufeff",
       "CODEX_CI": "\u0085",
       "CODEX_THREAD_ID": "\u001c",
-      "CODEX_HOME": "\u00a0"
+      "CODEX_USER_AGENT": "\u00a0"
     },
     "isAgent": true,
     "agent": "codex",
     "confidence": 0.92,
-    "signals": ["env:CODEX_SANDBOX", "env:CODEX_CI", "env:CODEX_THREAD_ID", "env:CODEX_HOME"]
+    "signals": ["env:CODEX_SANDBOX", "env:CODEX_CI", "env:CODEX_THREAD_ID", "env:CODEX_USER_AGENT"]
   },
   {
     "name": "claude code env",
@@ -109,30 +162,6 @@
     "signals": []
   },
   {
-    "name": "aider prefix",
-    "env": { "AIDER_MODEL": "sonnet" },
-    "isAgent": true,
-    "agent": "aider",
-    "confidence": 0.86,
-    "signals": ["env:AIDER_MODEL"]
-  },
-  {
-    "name": "prefix signals are sorted",
-    "env": { "AIDER_ZZZ": "1", "AIDER_MODEL": "sonnet", "AIDER_AAA": "1" },
-    "isAgent": true,
-    "agent": "aider",
-    "confidence": 0.86,
-    "signals": ["env:AIDER_AAA", "env:AIDER_MODEL", "env:AIDER_ZZZ"]
-  },
-  {
-    "name": "exact and prefix matches are deduplicated",
-    "env": { "CURSOR_AGENT": "1", "CURSOR_TRACE_ID": "trace" },
-    "isAgent": true,
-    "agent": "cursor",
-    "confidence": 0.92,
-    "signals": ["env:CURSOR_AGENT", "env:CURSOR_TRACE_ID"]
-  },
-  {
     "name": "equal confidence tie prefers the earlier rule",
     "env": { "GEMINI_CLI": "1", "CURSOR_AGENT": "1" },
     "isAgent": true,
@@ -158,7 +187,7 @@
   },
   {
     "name": "disabled agent",
-    "env": { "AGENTHINT_DISABLE": "1", "CODEX_HOME": "/tmp/codex" },
+    "env": { "AGENTHINT_DISABLE": "1", "CODEX_CI": "1" },
     "isAgent": false,
     "agent": null,
     "confidence": 1,
@@ -174,7 +203,7 @@
   },
   {
     "name": "disabled agent truthy value is case-insensitive",
-    "env": { "AGENTHINT_DISABLE": "YES", "CODEX_HOME": "/tmp/codex" },
+    "env": { "AGENTHINT_DISABLE": "YES", "CODEX_CI": "1" },
     "isAgent": false,
     "agent": null,
     "confidence": 1,

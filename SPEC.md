@@ -43,6 +43,21 @@ Heuristic environment values that are empty or whitespace-only should also be ig
 
 For portability, whitespace means exactly the ASCII characters space, tab (`\t`), line feed (`\n`), vertical tab (`\v`), form feed (`\f`), and carriage return (`\r`). Implementations should not rely on their language's native trim, which differs on non-ASCII characters such as U+00A0, U+0085, and U+FEFF; those characters are treated as ordinary values. The same rule applies to `AGENTHINT_AGENT`, parent process names, and `agenthint init <name>`.
 
+### Agent Name Normalization
+
+Known agent names and their aliases match case-insensitively and normalize to the lowercase canonical name. Only the ASCII letters `A`-`Z` are folded, so implementations agree regardless of their native lowercase rules. Other values, including custom agent names, keep their original case.
+
+| Value | Normalized agent |
+| --- | --- |
+| a known agent name, such as `Codex` | the lowercase name, such as `codex` |
+| `github-copilot`, `github-copilot-cli` | `copilot` |
+| `claude-code/<anything>` | `claude-code` |
+| `roo` | `roo-code` |
+| `kilo-code` | `kilocode` |
+| `vibe` | `mistral-vibe` |
+
+The same normalization applies to `AGENTHINT_AGENT` and `agenthint init <name>`.
+
 ## Override Conventions
 
 `AGENTHINT_DISABLE` forces a no-agent result and `AGENTHINT_FORCE` forces an agent result; both take precedence over `AI_AGENT` and heuristics. When `AGENTHINT_FORCE` is set, `AGENTHINT_AGENT` optionally names the forced agent; otherwise the agent is `unknown`. Truthy values are `1`, `true`, `yes`, and `on`, case-insensitively.
@@ -52,7 +67,6 @@ For portability, whitespace means exactly the ASCII characters space, tab (`\t`)
 To keep results portable across implementations:
 
 - Heuristic matches report every matching signal, deduplicated, in rule-registry order.
-- Signal names matched by an environment prefix rule are sorted lexicographically.
 - When multiple heuristic rules match with equal confidence, the earliest rule in the registry wins.
 
 ## Parent Process Signals
@@ -69,12 +83,10 @@ Initial candidates:
 - `CODEX_SANDBOX`
 - `CODEX_CI`
 - `CODEX_THREAD_ID`
-- `CODEX_HOME`
 - `CODEX_USER_AGENT`
 - `CLAUDECODE`
 - `CLAUDE_CODE`
 - `CLAUDECODE_CWD`
-- `AIDER_*`
 - `CURSOR_AGENT`
 - `GEMINI_CLI`
 - `AUGMENT_AGENT`
@@ -83,7 +95,6 @@ Initial candidates:
 - `OPENCODE`
 - `COPILOT_MODEL`
 - `COPILOT_ALLOW_ALL`
-- `COPILOT_GITHUB_TOKEN`
 - `COPILOT_CLI`
 - `REPL_ID`
 - `ANTIGRAVITY_AGENT`
@@ -98,6 +109,8 @@ Initial candidates:
 - `AGENTHINT_FORCE`
 - `AGENTHINT_AGENT`
 - `AGENTHINT_DISABLE`
+
+Heuristic signals should be variables that an agent runtime sets for its own tool calls. Variables that people set in a shell profile (for example `CODEX_HOME`, `COPILOT_GITHUB_TOKEN`, or `AIDER_*` configuration) or that an IDE sets for every integrated terminal (for example `CURSOR_TRACE_ID`) must not be treated as agent signals.
 
 Implementations must not print environment variable values by default. Signal names are enough for diagnostics.
 

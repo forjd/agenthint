@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { type AgentName, type KnownAgent, normalizeAgentName } from "./agent-names.js";
-import { ENVIRONMENT_RULES, PARENT_PROCESS_RULES, PREFIX_RULES } from "./generated-rules.js";
+import { ENVIRONMENT_RULES, PARENT_PROCESS_RULES } from "./generated-rules.js";
 import { trimWhitespace } from "./whitespace.js";
 
 export type { AgentName, KnownAgent } from "./agent-names.js";
@@ -33,30 +33,23 @@ type DetectionRule = {
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 
-const DETECTION_RULES: DetectionRule[] = [
-  ...ENVIRONMENT_RULES.map((rule) => ({
-    agent:
-      rule.agent === "claude-code"
-        ? (env: NodeJS.ProcessEnv) =>
-            present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code"
-        : rule.agent,
-    confidence: rule.confidence,
-    match: (env: NodeJS.ProcessEnv) => {
-      const signals = present(env, [...rule.names]);
+const DETECTION_RULES: DetectionRule[] = ENVIRONMENT_RULES.map((rule) => ({
+  agent:
+    rule.agent === "claude-code"
+      ? (env: NodeJS.ProcessEnv) =>
+          present(env, ["CLAUDE_CODE_IS_COWORK"]).length > 0 ? "cowork" : "claude-code"
+      : rule.agent,
+  confidence: rule.confidence,
+  match: (env: NodeJS.ProcessEnv) => {
+    const signals = present(env, [...rule.names]);
 
-      if (rule.agent === "claude-code" && signals.length > 0) {
-        signals.push(...present(env, ["CLAUDE_CODE_IS_COWORK"]));
-      }
+    if (rule.agent === "claude-code" && signals.length > 0) {
+      signals.push(...present(env, ["CLAUDE_CODE_IS_COWORK"]));
+    }
 
-      return signals;
-    },
-  })),
-  ...PREFIX_RULES.map((rule) => ({
-    agent: rule.agent,
-    confidence: rule.confidence,
-    match: (env: NodeJS.ProcessEnv) => prefixPresent(env, rule.prefix),
-  })),
-];
+    return signals;
+  },
+}));
 
 export function detectAgent(options: DetectAgentOptions = {}): AgentHintResult {
   const env = options.env ?? process.env;
@@ -237,13 +230,6 @@ function agentFromProcessName(name: string): KnownAgent | null {
 
 function present(env: NodeJS.ProcessEnv, names: string[]): string[] {
   return names.filter((name) => hasValue(env[name])).map((name) => `env:${name}`);
-}
-
-function prefixPresent(env: NodeJS.ProcessEnv, prefix: string): string[] {
-  return Object.keys(env)
-    .filter((name) => name.startsWith(prefix) && hasValue(env[name]))
-    .map((name) => `env:${name}`)
-    .sort();
 }
 
 function hasValue(value: string | undefined): boolean {
